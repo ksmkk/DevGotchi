@@ -3,7 +3,7 @@
 Este es el repositorio de DevGotchi, nuestro proyecto para arquitectura de sistemas. Básicamente es un tamagotchi pensado para monitorear pipelines.
 
 ### El problema
-Revisar el estado de los servidores o los pipelines de CI/CD es aburrido, y la verdad es que muchas veces terminamos ignorando las alertas que llegan por Slack o Discord.
+Revisar el estado de los servidores o los pipelines de CI/CD es aburrido, y la verdad es que muchas veces terminamos ignorando las alertas que llegan.
 
 ### Nuestra solución
 Vamos a hacer una mascota virtual web. La lógica es simple:
