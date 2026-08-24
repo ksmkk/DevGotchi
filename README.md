@@ -28,6 +28,30 @@ Tenemos dos objetivos principales para aprobar esta parte:
 (Nota: esto lo vamos a ir actualizando a medida que avancemos con el código)
 
 1. Clonar el repositorio.
-2. Para el backend: entrar a la carpeta y correr `npm install`.
+2. Para el backend:
+   - Entrar a la carpeta `backend`.
+   - Instalar dependencias con `npm install`.
+   - Levantar el servidor con `npm run dev`.
 3. Para el frontend: entrar a la carpeta y correr `npm install`.
 4. Levantar la base de datos (próximamente vamos a agregar el archivo de Docker para esto).
+
+### Backend inicial
+El backend se encuentra en la carpeta `backend` y ya está configurado con:
+- `express` para crear el servidor web.
+- `nodemon` para reiniciar el servidor automáticamente durante el desarrollo.
+- un endpoint inicial en la ruta `/` que devuelve:
+  `{"estado": "El backend de DevGotchi está vivo"}`
+
+### API contract para frontend
+El backend ya define el contrato de datos para el frontend en el archivo `backend/API_CONTRACT.md`.
+Allí se documentan los endpoints y el formato JSON que el frontend debe consumir para pintar el DevGotchi.
+
+### Evaluación del DevGotchi
+La lógica de evaluación ya está implementada y validada con pruebas. El backend recibe el estado del proyecto, lo interpreta y devuelve:
+- `health`
+- `vida`
+- `message`
+- `status`
+- `timestamp`
+
+Eso permite que el frontend solo se preocupe por renderizar la mascota según el estado del proyecto.
