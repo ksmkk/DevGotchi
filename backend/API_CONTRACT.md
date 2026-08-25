@@ -32,7 +32,25 @@ Respuesta esperada:
 
 ---
 
-## 3. Webhook para actualizar el estado de un proyecto
+## 3. Estado de la base de datos
+
+### GET /estado-db
+
+Ejecuta `SELECT NOW()` para comprobar que el backend puede conectarse a PostgreSQL.
+
+Respuesta cuando la conexión funciona:
+
+```json
+{
+  "ok": true,
+  "conectado": true,
+  "ahora": "2026-08-25T22:00:00.000Z"
+}
+```
+
+---
+
+## 4. Webhook para actualizar el estado de un proyecto
 
 ### POST /api/webhooks/project-status
 
@@ -71,7 +89,7 @@ Recibe el estado del proyecto o pipeline y devuelve la evaluación del DevGotchi
 
 ---
 
-## 4. Consulta del estado actual por proyecto
+## 5. Consulta del estado actual por proyecto
 
 ### GET /api/projects/demo
 
@@ -125,7 +143,7 @@ Devuelve el estado actual de un proyecto en específico.
 
 ---
 
-## 5. Mapeo del DevGotchi
+## 6. Mapeo del DevGotchi
 
 | status del proyecto | health | vida | mensaje |
 |---|---:|---:|---|
@@ -136,7 +154,7 @@ Devuelve el estado actual de un proyecto en específico.
 
 ---
 
-## 6. Observaciones para frontend
+## 7. Observaciones para frontend
 
 El frontend solo debe depender de los campos:
 
