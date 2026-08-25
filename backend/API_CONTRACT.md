@@ -73,6 +73,29 @@ Recibe el estado del proyecto o pipeline y devuelve la evaluación del DevGotchi
 
 ## 4. Consulta del estado actual por proyecto
 
+### GET /api/projects/demo
+
+Devuelve un DevGotchi de prueba con estado saludable y vida completa, sin
+necesidad de enviar datos. Sirve para validar rápidamente que el backend corre.
+
+Respuesta esperada:
+
+```json
+{
+  "ok": true,
+  "data": {
+    "project": "demo-project",
+    "branch": "main",
+    "workflow": "demo",
+    "status": "success",
+    "health": "healthy",
+    "vida": 100,
+    "message": "Todo está bien: el pipeline pasó correctamente",
+    "timestamp": "2026-08-25T12:00:00.000Z"
+  }
+}
+```
+
 ### GET /api/projects
 
 Devuelve la lista de todos los proyectos con su último estado evaluado.

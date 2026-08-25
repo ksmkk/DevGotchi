@@ -1,4 +1,19 @@
 const { getAllProjects, getProjectStatus } = require('../store/projectStore');
+const { evaluateProjectHealth } = require('../services/devgotchiService');
+
+function getDemoProjectStatus(req, res) {
+  const demoStatus = evaluateProjectHealth({
+    project: 'demo-project',
+    branch: 'main',
+    workflow: 'demo',
+    status: 'success',
+  });
+
+  return res.status(200).json({
+    ok: true,
+    data: demoStatus,
+  });
+}
 
 function listProjectStatuses(req, res) {
   const projects = getAllProjects();
@@ -27,6 +42,7 @@ function getProjectStatusByName(req, res) {
 }
 
 module.exports = {
+  getDemoProjectStatus,
   listProjectStatuses,
   getProjectStatusByName,
 };
