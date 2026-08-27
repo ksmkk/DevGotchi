@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS devgotchi (
+  id SERIAL PRIMARY KEY,
+  nombre TEXT NOT NULL,
+  vida_actual INTEGER NOT NULL DEFAULT 100
+);
