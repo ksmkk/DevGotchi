@@ -2,7 +2,7 @@ const express = require('express');
 const healthRoutes = require('./routes/health.routes');
 const webhookRoutes = require('./routes/webhooks.routes');
 const projectsRoutes = require('./routes/projects.routes');
-const { pool } = require('./db/database');
+const { pool, dbType } = require('../db/database');
 
 const app = express();
 
@@ -16,18 +16,24 @@ app.get('/', (req, res) => {
 
 app.get('/estado-db', async (req, res) => {
   try {
-    const result = await pool.query('SELECT NOW() AS ahora');
+    const query = dbType === 'sqlite' 
+      ? 'SELECT datetime(\'now\') AS ahora' 
+      : 'SELECT NOW() AS ahora';
+    
+    const result = await pool.query(query);
 
     return res.status(200).json({
       ok: true,
       conectado: true,
+      database: dbType.toUpperCase(),
       ahora: result.rows[0].ahora,
     });
   } catch (error) {
     return res.status(503).json({
       ok: false,
       conectado: false,
-      error: 'No se pudo conectar con PostgreSQL',
+      database: dbType.toUpperCase(),
+      error: `No se pudo conectar con ${dbType.toUpperCase()}`,
     });
   }
 });

@@ -37,14 +37,13 @@ Tenemos dos objetivos principales para aprobar esta parte:
 
 ### Base de datos PostgreSQL
 
-1. Instalar dependencias del backend con `npm install` dentro de `backend`.
-2. Desde la raíz del proyecto, iniciar PostgreSQL con `docker compose up -d`.
-3. El archivo `docker-compose.yml` configura `POSTGRES_USER`, `POSTGRES_PASSWORD` y `POSTGRES_DB`; acepta valores personalizados mediante variables de entorno.
-4. Iniciar el backend con `npm run dev` dentro de `backend`.
-5. Al iniciar, el backend crea automáticamente la tabla `devgotchi` mediante `backend/src/db/schema.sql`.
-6. Verificar la conexión en `http://localhost:3000/estado-db`.
+1. Copiar `.env.example` a `.env` en la carpeta `backend`.
+2. Desde la raíz del proyecto, iniciar PostgreSQL: `docker compose up -d`.
+3. En la carpeta `backend`, instalar dependencias: `npm install`.
+4. Iniciar el servidor: `npm run dev`.
+5. Verificar conexión: `curl http://localhost:3000/estado-db`.
 
-La tabla inicial contiene únicamente `id`, `nombre` y `vida_actual`.
+El backend inicializa automáticamente el esquema de la base de datos al arrancar.
 
 ### Backend inicial
 El backend se encuentra en la carpeta `backend` y ya está configurado con:
