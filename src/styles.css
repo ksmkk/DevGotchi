@@ -22,6 +22,37 @@ progress {
   font: inherit;
 }
 
+.query-status {
+  width: min(100%, 460px);
+  padding: 28px;
+  border: 1px solid rgb(23 33 26 / 12%);
+  border-radius: 18px;
+  background: white;
+  box-shadow: 0 24px 70px rgb(31 54 39 / 14%);
+  text-align: center;
+}
+
+.query-status h1 {
+  font-size: 1.35rem;
+}
+
+.query-status p {
+  color: #657168;
+}
+
+.query-status button {
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  color: white;
+  background: #277c4b;
+  cursor: pointer;
+}
+
+.query-status--error {
+  border-top: 4px solid #b8423c;
+}
+
 .app-shell {
   display: grid;
   min-height: 100vh;
