@@ -54,10 +54,8 @@ progress {
 }
 
 .app-shell {
-  display: grid;
   min-height: 100vh;
-  place-items: center;
-  padding: 32px 18px;
+  padding: 52px 24px 72px;
   background:
     radial-gradient(circle at 12% 18%, rgb(255 255 255 / 80%) 0 3px, transparent 4px),
     radial-gradient(circle at 86% 78%, rgb(255 255 255 / 70%) 0 4px, transparent 5px),
@@ -65,10 +63,86 @@ progress {
   background-size: 76px 76px, 104px 104px, auto;
 }
 
+.app-shell--centered {
+  display: grid;
+  place-items: center;
+}
+
+.dashboard {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+}
+
+.dashboard__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+  margin-bottom: 32px;
+}
+
+.dashboard__eyebrow,
+.panel__eyebrow {
+  margin: 0 0 7px;
+  color: #277c4b;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.dashboard__header h1 {
+  max-width: 680px;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.dashboard__header p:last-child {
+  max-width: 620px;
+  margin: 13px 0 0;
+  color: #657168;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.connection-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 8px;
+  margin-top: 7px;
+  padding: 9px 13px;
+  border: 1px solid #cfe3d5;
+  border-radius: 999px;
+  color: #256b42;
+  background: rgb(255 255 255 / 72%);
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.connection-pill span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2e9158;
+  box-shadow: 0 0 0 4px rgb(46 145 88 / 14%);
+}
+
+.dashboard__grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.9fr) minmax(420px, 1.1fr);
+  align-items: start;
+  gap: 24px;
+}
+
+.dashboard__sidebar {
+  display: grid;
+  gap: 18px;
+}
+
 .devgotchi-card {
   --health-color: #277c4b;
   --health-light: #dff3e5;
-  width: min(100%, 460px);
+  width: 100%;
   overflow: hidden;
   padding: 28px;
   border: 1px solid rgb(23 33 26 / 12%);
@@ -76,6 +150,23 @@ progress {
   border-radius: 24px;
   background: rgb(255 255 255 / 94%);
   box-shadow: 0 24px 70px rgb(31 54 39 / 14%);
+}
+
+.devgotchi-card__header h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+}
+
+.health-chip {
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: var(--health-color);
+  background: var(--health-light);
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.72rem;
+  font-weight: 750;
 }
 
 .devgotchi-card--warning {
@@ -242,10 +333,234 @@ h1 {
 }
 
 .life h2,
+.life h3,
 .life strong {
   margin: 0;
   font-size: 0.88rem;
 }
+
+.care-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #e1e8e2;
+  border-radius: 16px;
+  background: #f7f9f7;
+}
+
+.care-action div {
+  display: grid;
+  gap: 3px;
+}
+
+.care-action strong {
+  font-size: 0.86rem;
+}
+
+.care-action span {
+  color: #707a72;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.care-action button,
+.repository-form button {
+  flex: 0 0 auto;
+  padding: 10px 15px;
+  border: 0;
+  border-radius: 11px;
+  color: white;
+  background: #277c4b;
+  box-shadow: 0 8px 18px rgb(39 124 75 / 20%);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.care-action button span {
+  margin-right: 5px;
+  color: white;
+}
+
+.care-action button:disabled,
+.repository-form button:disabled {
+  opacity: 0.58;
+  cursor: not-allowed;
+}
+
+.action-error,
+.form-feedback--error {
+  color: #a73430 !important;
+}
+
+.action-error {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.panel {
+  padding: 24px;
+  border: 1px solid rgb(23 33 26 / 10%);
+  border-radius: 20px;
+  background: rgb(255 255 255 / 90%);
+  box-shadow: 0 15px 45px rgb(31 54 39 / 9%);
+}
+
+.repository-panel {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 13px;
+}
+
+.panel__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 12px;
+  color: white;
+  background: #17211a;
+  font-size: 1.25rem;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  letter-spacing: -0.025em;
+}
+
+.panel__description,
+.repository-form,
+.repository-connected {
+  grid-column: 1 / -1;
+}
+
+.panel__description {
+  margin: 18px 0;
+  color: #657168;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.repository-connected {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 15px;
+  padding: 12px;
+  border: 1px solid #d7e9dc;
+  border-radius: 12px;
+  background: #eff8f1;
+}
+
+.repository-connected > span {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #277c4b;
+  font-size: 0.75rem;
+}
+
+.repository-connected div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.repository-connected strong {
+  font-size: 0.75rem;
+}
+
+.repository-connected a {
+  overflow: hidden;
+  color: #277c4b;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repository-form label {
+  display: block;
+  margin-bottom: 7px;
+  color: #485149;
+  font-size: 0.75rem;
+  font-weight: 750;
+}
+
+.repository-form__row {
+  display: flex;
+  gap: 8px;
+}
+
+.repository-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #d9dfda;
+  border-radius: 11px;
+  outline: none;
+  color: #17211a;
+  background: white;
+  font-size: 0.78rem;
+}
+
+.repository-form input:focus {
+  border-color: #277c4b;
+  box-shadow: 0 0 0 3px rgb(39 124 75 / 12%);
+}
+
+.form-feedback {
+  min-height: 1em;
+  margin: 7px 0 0;
+  color: #7a827c;
+  font-size: 0.68rem;
+}
+
+.state-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.state-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 7px;
+  padding: 11px;
+  border: 1px solid #e5eae6;
+  border-radius: 12px;
+}
+
+.state-list strong {
+  font-size: 0.72rem;
+}
+
+.state-list small {
+  grid-column: 2;
+  color: #7a827c;
+  font-size: 0.62rem;
+}
+
+.state-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 3px;
+  border-radius: 50%;
+}
+
+.state-dot--healthy { background: #2e9158; }
+.state-dot--low { background: #c28512; }
+.state-dot--critical { background: #bd4540; }
 
 .life strong {
   color: var(--health-color);
@@ -328,9 +643,19 @@ h1 {
   text-align: center;
 }
 
-@media (max-width: 400px) {
+@media (max-width: 850px) {
+  .dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard__header {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
   .app-shell {
-    padding: 18px 12px;
+    padding: 28px 12px 48px;
   }
 
   .devgotchi-card {
@@ -339,15 +664,23 @@ h1 {
   }
 
   .devgotchi-card__header {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 12px;
+    gap: 10px;
   }
 
   .health-indicator {
     width: 164px;
     height: 164px;
     margin-top: 31px;
+  }
+
+  .care-action,
+  .repository-form__row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .state-list {
+    grid-template-columns: 1fr;
   }
 }
 

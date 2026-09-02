@@ -1,61 +1,110 @@
 import { MockedProvider } from "@apollo/client/testing/react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import App from "../../src/App";
-import { GET_PROJECTS } from "../../src/graphql/queries";
+import { DevGotchiView } from "../../src/components/DevGotchiView";
+import {
+  CARE_FOR_DEVGOTCHI,
+  CONNECT_REPOSITORY,
+  GET_DEVGOTCHI,
+} from "../../src/graphql/queries";
 
-const variables = { status: "active", limit: 1, offset: 0 };
-
-const project = {
-  id: 1,
-  uuid: "550e8400-e29b-41d4-a716-446655440000",
-  name: "DevGotchi",
-  description: "Mascota del proyecto",
-  repositoryUrl: "https://github.com/example/devgotchi",
-  status: "active",
-  devgotchiHealth: 85,
-  devgotchiMood: "happy",
-  lastCommitDate: "2026-08-31T12:00:00.000Z",
-  createdAt: "2026-08-01T12:00:00.000Z",
-  updatedAt: "2026-08-31T12:00:00.000Z",
+const devgotchi = {
+  __typename: "DevGotchi",
+  id: "1",
+  nombre: "Pixel",
+  vida_actual: 72,
+  repository_url: null,
 };
 
-describe("App GraphQL integration", () => {
-  it("shows loading and renders the project returned by Apollo", async () => {
+const queryMock = {
+  request: { query: GET_DEVGOTCHI },
+  result: { data: { devgotchi } },
+};
+
+describe("vista interactiva de DevGotchi", () => {
+  it("muestra carga y actualiza la interfaz con datos de la API", async () => {
     render(
-      <MockedProvider mocks={[{
-        request: { query: GET_PROJECTS, variables },
-        result: { data: { projects: [project] } },
-      }]}>
+      <MockedProvider mocks={[queryMock]}>
         <App />
       </MockedProvider>,
     );
 
     expect(screen.getByRole("status")).toHaveTextContent("Cargando DevGotchi");
-    expect(await screen.findByRole("heading", { name: "DevGotchi" })).toBeVisible();
-    expect(screen.getByText("85/100")).toBeVisible();
-    expect(screen.getByText("¡El proyecto está vivo y progresando!")).toBeVisible();
+    expect(await screen.findByRole("heading", { name: "Pixel" })).toBeVisible();
+    expect(screen.getByText("72/100")).toBeVisible();
+    expect(screen.getByRole("img", {
+      name: "DevGotchi está atento y necesita supervisión",
+    })).toBeVisible();
   });
 
-  it("renders an empty state when there are no active projects", async () => {
+  it("cuida la mascota y actualiza la vida sin recargar", async () => {
+    const careMock = {
+      request: { query: CARE_FOR_DEVGOTCHI },
+      result: {
+        data: { cuidarDevgotchi: { ...devgotchi, vida_actual: 82 } },
+      },
+    };
+
     render(
-      <MockedProvider mocks={[{
-        request: { query: GET_PROJECTS, variables },
-        result: { data: { projects: [] } },
-      }]}>
+      <MockedProvider mocks={[queryMock, careMock]}>
         <App />
       </MockedProvider>,
     );
 
-    expect(
-      await screen.findByRole("heading", { name: "Aún no hay proyectos activos" }),
-    ).toBeVisible();
+    fireEvent.click(await screen.findByRole("button", { name: /Cuidar \+10/i }));
+    expect(await screen.findByText("82/100")).toBeVisible();
+    expect(screen.getByRole("progressbar", { name: "Vida de Pixel: 82 de 100" }))
+      .toHaveAttribute("value", "82");
   });
 
-  it("shows the API error and a retry action", async () => {
+  it("conecta una URL de GitHub y muestra el repositorio", async () => {
+    const repositoryUrl = "https://github.com/devgotchi/app";
+    const connectMock = {
+      request: {
+        query: CONNECT_REPOSITORY,
+        variables: { repositoryUrl },
+      },
+      result: {
+        data: {
+          conectarRepositorio: { ...devgotchi, repository_url: repositoryUrl },
+        },
+      },
+    };
+
+    render(
+      <MockedProvider mocks={[queryMock, connectMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    const input = await screen.findByLabelText("URL del repositorio de GitHub");
+    fireEvent.change(input, { target: { value: `${repositoryUrl}.git` } });
+    fireEvent.click(screen.getByRole("button", { name: "Conectar" }));
+
+    expect(await screen.findByText("Repositorio conectado correctamente.")).toBeVisible();
+    expect(screen.getByRole("link", { name: "devgotchi/app" }))
+      .toHaveAttribute("href", repositoryUrl);
+  });
+
+  it("rechaza URLs que no pertenecen a un repositorio de GitHub", async () => {
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    const input = await screen.findByLabelText("URL del repositorio de GitHub");
+    fireEvent.change(input, { target: { value: "https://example.com/proyecto" } });
+    fireEvent.click(screen.getByRole("button", { name: "Conectar" }));
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Ingresa una URL válida");
+  });
+
+  it("muestra el error de consulta y permite reintentar", async () => {
     render(
       <MockedProvider mocks={[{
-        request: { query: GET_PROJECTS, variables },
+        request: { query: GET_DEVGOTCHI },
         error: new Error("Backend no disponible"),
       }]}>
         <App />
@@ -64,5 +113,25 @@ describe("App GraphQL integration", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Backend no disponible");
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeEnabled();
+  });
+});
+
+describe("estados visuales de la mascota", () => {
+  it.each([
+    [90, "healthy", "Saludable"],
+    [65, "warning", "Bajo"],
+    [25, "critical", "Crítico"],
+  ])("muestra vida %i como %s", (life, cssState, label) => {
+    const { container } = render(
+      <DevGotchiView
+        devgotchi={{ ...devgotchi, vida_actual: life }}
+        careLoading={false}
+        onCare={() => undefined}
+      />,
+    );
+
+    expect(container.querySelector("article"))
+      .toHaveClass(`devgotchi-card--${cssState}`);
+    expect(screen.getByText(label)).toBeVisible();
   });
 });

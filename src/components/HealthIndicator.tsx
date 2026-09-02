@@ -15,7 +15,7 @@ const healthDetails: Record<
   },
   warning: {
     expression: "◉_◉",
-    label: "Atención",
+    label: "Bajo",
     description: "DevGotchi está atento y necesita supervisión",
   },
   critical: {

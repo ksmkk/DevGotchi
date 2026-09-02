@@ -9,7 +9,12 @@ export default defineConfig({
       "@apollo/client": fileURLToPath(
         new URL("./node_modules/@apollo/client", import.meta.url),
       ),
+      react: fileURLToPath(new URL("./node_modules/react", import.meta.url)),
+      "react-dom": fileURLToPath(
+        new URL("./node_modules/react-dom", import.meta.url),
+      ),
     },
+    dedupe: ["react", "react-dom"],
   },
   server: {
     fs: { allow: [".."] },

@@ -27,3 +27,11 @@ export type HealthResponse = {
   ok: boolean;
   data: DevGotchiData;
 };
+
+export type DevGotchiApiData = {
+  __typename?: "DevGotchi";
+  id: string;
+  nombre: string;
+  vida_actual: number;
+  repository_url: string | null;
+};

@@ -71,5 +71,5 @@ Eso permite que el frontend solo se preocupe por renderizar la mascota según el
 
 El frontend usa Apollo Client y obtiene el endpoint desde `VITE_GRAPHQL_URL`. Para
 desarrollo, copia `frontend/.env.example` como `frontend/.env`; su valor inicial apunta
-a `http://localhost:3000/graphql`. La consulta `GetProjects` incluye estados de carga,
+a `http://localhost:3000/graphql`. La consulta `GetDevGotchi` incluye estados de carga,
 error y reintento.
