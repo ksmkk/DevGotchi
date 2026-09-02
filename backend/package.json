@@ -13,9 +13,12 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
+    "apollo-server-express": "^3.13.0",
     "better-sqlite3": "^13.0.3",
+    "cors": "^2.8.6",
     "dotenv": "^17.4.2",
-    "express": "^5.2.1",
+    "express": "^4.22.2",
+    "graphql": "^16.14.2",
     "pg": "^8.23.0"
   },
   "devDependencies": {

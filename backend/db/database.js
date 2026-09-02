@@ -26,7 +26,9 @@ if (dbType === 'sqlite') {
         
         const stmt = db.prepare(sqlQuery);
         
-        if (sqlQuery.trim().toUpperCase().startsWith('SELECT')) {
+        const isReturningQuery = /\bRETURNING\b/i.test(sqlQuery);
+
+        if (sqlQuery.trim().toUpperCase().startsWith('SELECT') || isReturningQuery) {
           const rows = stmt.all(...params);
           return Promise.resolve({ rows, rowCount: rows.length });
         } else {
