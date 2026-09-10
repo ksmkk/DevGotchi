@@ -73,3 +73,9 @@ El frontend usa Apollo Client y obtiene el endpoint desde `VITE_GRAPHQL_URL`. Pa
 desarrollo, copia `frontend/.env.example` como `frontend/.env`; su valor inicial apunta
 a `http://localhost:3000/graphql`. La consulta `GetDevGotchi` incluye estados de carga,
 error y reintento.
+
+El diagnóstico de conexión GraphQL no se muestra en la vista principal. Para habilitarlo
+en el apartado plegable **Opciones técnicas**, define
+`VITE_SHOW_TECHNICAL_OPTIONS=true` al compilar el frontend. Esta bandera separa la
+interfaz general de la información técnica; si el proyecto incorpora cuentas y roles,
+el backend deberá autorizar también el acceso para que la restricción sea segura.

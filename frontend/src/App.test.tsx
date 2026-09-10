@@ -1,6 +1,6 @@
 import { MockedProvider } from "@apollo/client/testing/react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App";
 import { DevGotchiView } from "../../src/components/DevGotchiView";
 import {
@@ -21,6 +21,10 @@ const queryMock = {
   request: { query: GET_DEVGOTCHI },
   result: { data: { devgotchi } },
 };
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe("vista interactiva de DevGotchi", () => {
   it("muestra carga y actualiza la interfaz con datos de la API", async () => {
@@ -56,6 +60,45 @@ describe("vista interactiva de DevGotchi", () => {
     expect(await screen.findByText("82/100")).toBeVisible();
     expect(screen.getByRole("progressbar", { name: "Vida de Pixel: 82 de 100" }))
       .toHaveAttribute("value", "82");
+  });
+
+  it("permite alimentar y jugar con feedback visual inmediato", async () => {
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: /Alimentar/i }));
+    expect(screen.getByText("¡Ñam! Pixel disfrutó su snack.")).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: /Jugar/i }));
+    expect(screen.getByText("¡Qué divertido! Pixel está feliz.")).toBeVisible();
+  });
+
+  it("oculta el diagnóstico GraphQL en la interfaz general", async () => {
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Pixel" })).toBeVisible();
+    expect(screen.queryByText("GraphQL conectado")).not.toBeInTheDocument();
+    expect(screen.queryByText("Opciones técnicas")).not.toBeInTheDocument();
+  });
+
+  it("muestra el diagnóstico dentro de opciones cuando el despliegue lo autoriza", async () => {
+    vi.stubEnv("VITE_SHOW_TECHNICAL_OPTIONS", "true");
+
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByText("Opciones técnicas")).toBeVisible();
+    expect(screen.getByText("GraphQL conectado")).toBeInTheDocument();
   });
 
   it("conecta una URL de GitHub y muestra el repositorio", async () => {

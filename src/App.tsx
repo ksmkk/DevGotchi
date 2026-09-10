@@ -16,6 +16,7 @@ type ConnectMutationVariables = { repositoryUrl: string };
 const githubRepositoryPattern = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/i;
 
 function App() {
+  const showTechnicalOptions = import.meta.env.VITE_SHOW_TECHNICAL_OPTIONS === "true";
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
@@ -124,9 +125,6 @@ function App() {
             <h1>Cuida tu código. Cuida tu DevGotchi.</h1>
             <p>La salud de tu mascota refleja la actividad de tu repositorio.</p>
           </div>
-          <span className="connection-pill">
-            <span aria-hidden="true" /> GraphQL conectado
-          </span>
         </header>
 
         <div className="dashboard__grid">
@@ -198,6 +196,19 @@ function App() {
                 <li><span className="state-dot state-dot--critical" /><strong>Crítico</strong><small>0–49 de vida</small></li>
               </ul>
             </section>
+
+            {showTechnicalOptions ? (
+              <details className="panel technical-options">
+                <summary>Opciones técnicas</summary>
+                <div className="technical-options__content">
+                  <p className="panel__eyebrow">Diagnóstico interno</p>
+                  <span className="connection-pill">
+                    <span aria-hidden="true" /> GraphQL conectado
+                  </span>
+                  <p>Visible sólo en despliegues habilitados para el equipo técnico.</p>
+                </div>
+              </details>
+            ) : null}
           </aside>
         </div>
       </div>
