@@ -15,7 +15,7 @@ const devgotchi = {
   nombre: "Pixel",
   vida_actual: 72,
   repository_url: null,
-};
+} as const;
 
 const queryMock = {
   request: { query: GET_DEVGOTCHI },
