@@ -324,6 +324,72 @@ const resolvers = {
     },
 
     /**
+     * Mutation.cuidarDevgotchi
+     * Recupera 10 puntos de salud sin superar el máximo de 100
+     */
+    cuidarDevgotchi: async (_, { projectId }, { db }) => {
+      try {
+        const projectQuery = 'SELECT devgotchi_health FROM projects WHERE id = $1';
+        const projectResult = await db.query(projectQuery, [projectId]);
+        if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
+
+        const currentHealth = projectResult.rows[0].devgotchi_health;
+        const newHealth = Math.min(100, currentHealth + 10);
+        const updateProjectQuery = `
+          UPDATE projects
+          SET devgotchi_health = $1, devgotchi_mood = 'happy'
+          WHERE id = $2
+          RETURNING *
+        `;
+        const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
+
+        const insertHistoryQuery = `
+          INSERT INTO health_history (project_id, health_value, mood)
+          VALUES ($1, $2, 'happy')
+        `;
+        await db.query(insertHistoryQuery, [projectId, newHealth]);
+
+        return formatProject(updatedProject.rows[0]);
+      } catch (error) {
+        console.error('Error caring for devgotchi:', error);
+        throw new Error('No se pudo cuidar al DevGotchi');
+      }
+    },
+
+    /**
+     * Mutation.disminuirVida
+     * Reduce 10 puntos de salud sin bajar de cero
+     */
+    disminuirVida: async (_, { projectId }, { db }) => {
+      try {
+        const projectQuery = 'SELECT devgotchi_health FROM projects WHERE id = $1';
+        const projectResult = await db.query(projectQuery, [projectId]);
+        if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
+
+        const currentHealth = projectResult.rows[0].devgotchi_health;
+        const newHealth = Math.max(0, currentHealth - 10);
+        const updateProjectQuery = `
+          UPDATE projects
+          SET devgotchi_health = $1, devgotchi_mood = 'sad'
+          WHERE id = $2
+          RETURNING *
+        `;
+        const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
+
+        const insertHistoryQuery = `
+          INSERT INTO health_history (project_id, health_value, mood)
+          VALUES ($1, $2, 'sad')
+        `;
+        await db.query(insertHistoryQuery, [projectId, newHealth]);
+
+        return formatProject(updatedProject.rows[0]);
+      } catch (error) {
+        console.error('Error decreasing devgotchi health:', error);
+        throw new Error('No se pudo disminuir la vida del DevGotchi');
+      }
+    },
+
+    /**
      * Mutation.createActivity
      * Registra una nueva actividad en un proyecto
      */

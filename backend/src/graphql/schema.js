@@ -201,6 +201,16 @@ const typeDefs = gql`
     ): Project
 
     """
+    Cuida al DevGotchi y recupera 10 puntos de salud
+    """
+    cuidarDevgotchi(projectId: ID!): Project
+
+    """
+    Reduce 10 puntos de vida del DevGotchi
+    """
+    disminuirVida(projectId: ID!): Project
+
+    """
     Registrar una actividad en un proyecto
     """
     createActivity(
