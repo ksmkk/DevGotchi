@@ -89,7 +89,43 @@ Recibe el estado del proyecto o pipeline y devuelve la evaluación del DevGotchi
 
 ---
 
-## 5. Consulta del estado actual por proyecto
+## 5. Contrato GraphQL frontend
+
+### Query `devgotchi`
+
+```graphql
+query {
+  devgotchi {
+    id
+    nombre
+    vida_actual
+    repository_url
+    devgotchiHealth
+    devgotchiMood
+  }
+}
+```
+
+### Mutation `conectarRepositorio`
+
+```graphql
+mutation {
+  conectarRepositorio(repositoryUrl: "https://github.com/acme/api") {
+    id
+    nombre
+    vida_actual
+    repository_url
+  }
+}
+```
+
+Los eventos `workflow_run` de GitHub Actions se normalizan usando `conclusion`,
+`head_branch`, `name` y `repository`. Si `GITHUB_WEBHOOK_SECRET` está configurado,
+el webhook también exige una firma `X-Hub-Signature-256` válida.
+
+---
+
+## 6. Consulta del estado actual por proyecto
 
 ### GET /api/projects/demo
 
@@ -143,7 +179,7 @@ Devuelve el estado actual de un proyecto en específico.
 
 ---
 
-## 6. Mapeo del DevGotchi
+## 7. Mapeo del DevGotchi
 
 | status del proyecto | health | vida | mensaje |
 |---|---:|---:|---|
@@ -154,7 +190,7 @@ Devuelve el estado actual de un proyecto en específico.
 
 ---
 
-## 7. Observaciones para frontend
+## 8. Observaciones para frontend
 
 El frontend solo debe depender de los campos:
 

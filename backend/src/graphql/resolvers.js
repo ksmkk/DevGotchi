@@ -20,6 +20,11 @@ const resolvers = {
   // QUERIES - Lectura de datos
   // =====================
   Query: {
+    devgotchi: async (_, __, { db }) => {
+      const result = await db.query('SELECT * FROM projects ORDER BY created_at ASC LIMIT 1');
+      return result.rows.length === 0 ? null : formatProject(result.rows[0]);
+    },
+
     /**
      * Query.users
      * Retorna todos los usuarios
@@ -155,6 +160,32 @@ const resolvers = {
   // MUTATIONS - Modificación de datos
   // =====================
   Mutation: {
+    conectarRepositorio: async (_, { repositoryUrl }, { db }) => {
+      const existing = await db.query(
+        'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
+        [repositoryUrl],
+      );
+
+      if (existing.rows.length > 0) {
+        return formatProject(existing.rows[0]);
+      }
+
+      const user = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
+      if (user.rows.length === 0) {
+        throw new Error('No hay un usuario disponible para conectar el repositorio');
+      }
+
+      const name = repositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
+      const result = await db.query(
+        `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
+         VALUES ($1, $2, $3, $4, 100, 'neutral')
+         RETURNING *`,
+        [randomUUID(), user.rows[0].id, name.replace(/\.git$/, ''), repositoryUrl],
+      );
+
+      return formatProject(result.rows[0]);
+    },
+
     /**
      * Mutation.createUser
      * Crea un nuevo usuario
@@ -329,25 +360,28 @@ const resolvers = {
      */
     cuidarDevgotchi: async (_, { projectId }, { db }) => {
       try {
-        const projectQuery = 'SELECT devgotchi_health FROM projects WHERE id = $1';
-        const projectResult = await db.query(projectQuery, [projectId]);
+        const projectQuery = projectId
+          ? 'SELECT id, devgotchi_health FROM projects WHERE id = $1'
+          : 'SELECT id, devgotchi_health FROM projects ORDER BY id ASC LIMIT 1';
+        const projectResult = await db.query(projectQuery, projectId ? [projectId] : []);
         if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
 
         const currentHealth = projectResult.rows[0].devgotchi_health;
         const newHealth = Math.min(100, currentHealth + 10);
+        const targetProjectId = projectId || projectResult.rows[0].id;
         const updateProjectQuery = `
           UPDATE projects
           SET devgotchi_health = $1, devgotchi_mood = 'happy'
           WHERE id = $2
           RETURNING *
         `;
-        const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
+        const updatedProject = await db.query(updateProjectQuery, [newHealth, targetProjectId]);
 
         const insertHistoryQuery = `
           INSERT INTO health_history (project_id, health_value, mood)
           VALUES ($1, $2, 'happy')
         `;
-        await db.query(insertHistoryQuery, [projectId, newHealth]);
+        await db.query(insertHistoryQuery, [targetProjectId, newHealth]);
 
         return formatProject(updatedProject.rows[0]);
       } catch (error) {
@@ -636,6 +670,9 @@ function formatProject(row) {
     lastCommitDate: formatDate(row.last_commit_date),
     createdAt: formatDate(row.created_at),
     updatedAt: formatDate(row.updated_at),
+    nombre: row.name,
+    vida_actual: row.devgotchi_health,
+    repository_url: row.repository_url,
   };
 }
 

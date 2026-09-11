@@ -34,6 +34,91 @@ progress {
   background-size: 76px 76px, 104px 104px, auto;
 }
 
+.app-content {
+  display: grid;
+  width: min(100%, 460px);
+  gap: 18px;
+}
+
+.repository-form {
+  display: grid;
+  gap: 10px;
+  padding: 22px;
+  border: 1px solid rgb(23 33 26 / 12%);
+  border-radius: 18px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 14px 38px rgb(31 54 39 / 10%);
+}
+
+.repository-form__eyebrow {
+  margin: 0 0 4px;
+  color: #657168;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.repository-form h1 {
+  font-size: 1.35rem;
+  letter-spacing: 0;
+}
+
+.repository-form label {
+  color: #4f5b52;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.repository-form__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.repository-form input {
+  min-width: 0;
+  border: 1px solid #cfd8d0;
+  border-radius: 9px;
+  padding: 11px 12px;
+  color: #17211a;
+  background: #fbfcfb;
+  font-size: 0.82rem;
+}
+
+.repository-form input:focus {
+  border-color: #277c4b;
+  outline: 3px solid rgb(39 124 75 / 14%);
+}
+
+.repository-form button {
+  border: 0;
+  border-radius: 9px;
+  padding: 0 15px;
+  color: white;
+  background: #277c4b;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.repository-form button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.form-message,
+.state-message {
+  margin: 0;
+  color: #657168;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.form-message--error,
+.state-message--error {
+  color: #a43d38;
+}
+
 .devgotchi-card {
   --health-color: #277c4b;
   --health-light: #dff3e5;
@@ -305,6 +390,18 @@ h1 {
   .devgotchi-card {
     padding: 22px 18px;
     border-radius: 20px;
+  }
+
+  .repository-form {
+    padding: 18px;
+  }
+
+  .repository-form__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .repository-form button {
+    min-height: 42px;
   }
 
   .devgotchi-card__header {

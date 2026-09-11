@@ -111,3 +111,35 @@ describe('Mutation.disminuirVida', () => {
     expect(db.query).toHaveBeenNthCalledWith(2, expect.any(String), [0, 7]);
   });
 });
+
+describe('Mutation.conectarRepositorio', () => {
+  test('crea un proyecto conectado para el primer usuario disponible', async () => {
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 2 }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 8,
+            uuid: 'project-uuid',
+            user_id: 2,
+            name: 'api-gateway',
+            repository_url: 'https://github.com/acme/api-gateway',
+            devgotchi_health: 100,
+            devgotchi_mood: 'neutral',
+          }],
+        }),
+    };
+
+    const result = await resolvers.Mutation.conectarRepositorio(
+      null,
+      { repositoryUrl: 'https://github.com/acme/api-gateway' },
+      { db },
+    );
+
+    expect(result.nombre).toBe('api-gateway');
+    expect(result.repositoryUrl).toBe('https://github.com/acme/api-gateway');
+    expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('SELECT id FROM users'));
+    expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('INSERT INTO projects'), expect.any(Array));
+  });
+});

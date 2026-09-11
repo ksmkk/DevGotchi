@@ -17,7 +17,7 @@ Decidimos usar las siguientes herramientas para el desarrollo:
 - Base de datos: SQL
 - Consultas: GraphQL
 
-Para conectar todo, vamos a usar REST API para recibir los webhooks desde GitHub Actions cuando termine un pipeline. Después, vamos a usar WebSockets para actualizar la salud del tamagotchi en el frontend en tiempo real.
+Para conectar todo, usamos REST para recibir los webhooks de GitHub Actions y GraphQL para consultar el estado desde React. El frontend actualiza la tarjeta mediante polling.
 
 ### Requisitos de la rúbrica
 Tenemos dos objetivos principales para aprobar esta parte:
@@ -34,6 +34,10 @@ Tenemos dos objetivos principales para aprobar esta parte:
    - Levantar el servidor con `npm run dev`.
 3. Para el frontend: entrar a la carpeta y correr `npm install`.
 4. Levantar la base de datos siguiendo la sección de PostgreSQL.
+5. Abrir `http://localhost:5173` y conectar una URL de GitHub desde el formulario.
+
+El frontend consulta GraphQL en `http://localhost:3000/graphql`. Para cambiarlo,
+definir `VITE_GRAPHQL_URL` antes de ejecutar Vite.
 
 ### Base de datos PostgreSQL
 
@@ -65,3 +69,13 @@ La lógica de evaluación ya está implementada y validada con pruebas. El backe
 - `timestamp`
 
 Eso permite que el frontend solo se preocupe por renderizar la mascota según el estado del proyecto.
+
+### Flujo GitHub Actions
+
+1. Configurar `GITHUB_WEBHOOK_SECRET` en `backend/.env` y usar el mismo secreto en GitHub.
+2. Crear un webhook apuntando a `POST /api/webhooks/project-status`.
+3. Seleccionar el evento `Workflow runs` y enviar el formato JSON.
+4. Conectar primero el repositorio desde el formulario del frontend.
+
+Cuando el secreto está configurado, el backend valida `X-Hub-Signature-256` y guarda
+la nueva vida en `projects` y `health_history`.

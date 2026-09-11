@@ -7,8 +7,16 @@ function normalizeProjectStatus(status) {
 }
 
 function evaluateProjectHealth(projectData = {}) {
-  const { project, status, branch, workflow, repository } = projectData;
+  const { project, branch, workflow, repository } = projectData;
+  const workflowRun = projectData.workflow_run || {};
+  const status = projectData.status || projectData.conclusion || workflowRun.conclusion || workflowRun.status;
   const normalizedStatus = normalizeProjectStatus(status);
+  const repositoryUrl = typeof repository === 'object'
+    ? repository.html_url || repository.clone_url || repository.url
+    : projectData.repositoryUrl;
+  const repositoryName = typeof repository === 'object'
+    ? repository.full_name || repository.name
+    : repository;
 
   const rules = {
     success: {
@@ -60,9 +68,10 @@ function evaluateProjectHealth(projectData = {}) {
   };
 
   return {
-    project: project || repository || 'unknown-project',
-    branch: branch || 'main',
-    workflow: workflow || 'unknown-workflow',
+    project: project || repositoryName || 'unknown-project',
+    repositoryUrl,
+    branch: branch || workflowRun.head_branch || 'main',
+    workflow: workflow || workflowRun.name || 'unknown-workflow',
     status: normalizedStatus,
     health: activeRule.health,
     vida: activeRule.vida,
