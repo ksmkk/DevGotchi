@@ -17,6 +17,7 @@ function sendJson(response, body, status = 200) {
 const server = http.createServer((request, response) => {
   response.setHeader("Access-Control-Allow-Origin", "*");
   response.setHeader("Access-Control-Allow-Headers", "content-type");
+  response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
 
   if (request.method === "OPTIONS") {
     response.writeHead(204);
