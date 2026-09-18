@@ -1,6 +1,6 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react";
 import { fileURLToPath, URL } from "node:url";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   plugins: [react()],
@@ -17,7 +17,10 @@ export default defineConfig({
     dedupe: ["react", "react-dom"],
   },
   server: {
-    host: "127.0.0.1",
-    hmr: { host: "127.0.0.1" },
+    fs: { allow: [".."] },
+  },
+  test: {
+    environment: "jsdom",
+    setupFiles: ["./src/test/setup.ts"],
   },
 });
