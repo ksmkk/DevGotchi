@@ -119,6 +119,10 @@ mutation {
 }
 ```
 
+La mutación persiste el repositorio en `projects.repository_url`. La URL se
+normaliza quitando espacios, el slash final y el sufijo `.git`; si el
+repositorio ya existe, devuelve el proyecto guardado sin crear un duplicado.
+
 Los eventos `workflow_run` de GitHub Actions se normalizan usando `conclusion`,
 `head_branch`, `name` y `repository`. Si `GITHUB_WEBHOOK_SECRET` está configurado,
 el webhook también exige una firma `X-Hub-Signature-256` válida.

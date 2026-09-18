@@ -161,9 +161,10 @@ const resolvers = {
   // =====================
   Mutation: {
     conectarRepositorio: async (_, { repositoryUrl }, { db }) => {
+      const normalizedRepositoryUrl = normalizeRepositoryUrl(repositoryUrl);
       const existing = await db.query(
         'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
-        [repositoryUrl],
+        [normalizedRepositoryUrl],
       );
 
       if (existing.rows.length > 0) {
@@ -175,12 +176,12 @@ const resolvers = {
         throw new Error('No hay un usuario disponible para conectar el repositorio');
       }
 
-      const name = repositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
+      const name = normalizedRepositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
       const result = await db.query(
         `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
          VALUES ($1, $2, $3, $4, 100, 'neutral')
          RETURNING *`,
-        [randomUUID(), user.rows[0].id, name.replace(/\.git$/, ''), repositoryUrl],
+        [randomUUID(), user.rows[0].id, name, normalizedRepositoryUrl],
       );
 
       return formatProject(result.rows[0]);
@@ -674,6 +675,16 @@ function formatProject(row) {
     vida_actual: row.devgotchi_health,
     repository_url: row.repository_url,
   };
+}
+
+function normalizeRepositoryUrl(repositoryUrl) {
+  const normalizedUrl = String(repositoryUrl || '').trim().replace(/\/+$/, '').replace(/\.git$/i, '');
+
+  if (!normalizedUrl) {
+    throw new Error('La URL del repositorio es obligatoria');
+  }
+
+  return normalizedUrl;
 }
 
 function formatActivity(row) {

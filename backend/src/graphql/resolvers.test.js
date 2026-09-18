@@ -142,4 +142,58 @@ describe('Mutation.conectarRepositorio', () => {
     expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('SELECT id FROM users'));
     expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('INSERT INTO projects'), expect.any(Array));
   });
+
+  test('normaliza la URL antes de consultar y guardar el repositorio', async () => {
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 2 }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 8,
+            uuid: 'project-uuid',
+            user_id: 2,
+            name: 'api-gateway',
+            repository_url: 'https://github.com/acme/api-gateway',
+            devgotchi_health: 100,
+            devgotchi_mood: 'neutral',
+          }],
+        }),
+    };
+
+    await resolvers.Mutation.conectarRepositorio(
+      null,
+      { repositoryUrl: ' https://github.com/acme/api-gateway.git/ ' },
+      { db },
+    );
+
+    expect(db.query).toHaveBeenNthCalledWith(1, expect.any(String), ['https://github.com/acme/api-gateway']);
+    expect(db.query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO projects'),
+      expect.arrayContaining(['https://github.com/acme/api-gateway']),
+    );
+  });
+
+  test('devuelve el proyecto existente y no crea otro para la misma URL normalizada', async () => {
+    const existingProject = {
+      id: 8,
+      uuid: 'project-uuid',
+      user_id: 2,
+      name: 'api-gateway',
+      repository_url: 'https://github.com/acme/api-gateway',
+      devgotchi_health: 100,
+      devgotchi_mood: 'neutral',
+    };
+    const db = { query: jest.fn().mockResolvedValueOnce({ rows: [existingProject] }) };
+
+    const result = await resolvers.Mutation.conectarRepositorio(
+      null,
+      { repositoryUrl: 'https://github.com/acme/api-gateway.git/' },
+      { db },
+    );
+
+    expect(result.repositoryUrl).toBe('https://github.com/acme/api-gateway');
+    expect(db.query).toHaveBeenCalledTimes(1);
+  });
 });
