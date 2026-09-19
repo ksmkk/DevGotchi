@@ -1,10 +1,13 @@
 process.env.GITHUB_CLIENT_ID = 'test-client-id';
 process.env.GITHUB_CLIENT_SECRET = 'test-client-secret';
 process.env.GITHUB_CALLBACK_URL = 'http://localhost:3000/api/auth/github/callback';
+process.env.GITHUB_WEBHOOK_SECRET = 'test-webhook-secret';
+process.env.GITHUB_WEBHOOK_URL = 'https://devgotchi.example/api/github/webhook';
 process.env.SESSION_SECRET = 'test-session-secret';
 
 const {
   completeGitHubOAuth,
+  registerRepositoryWebhook,
   startGitHubOAuth,
 } = require('./githubAuth');
 
@@ -29,7 +32,7 @@ describe('OAuth de GitHub', () => {
 
     expect(redirect.origin).toBe('https://github.com');
     expect(redirect.pathname).toBe('/login/oauth/authorize');
-    expect(redirect.searchParams.get('scope')).toBe('read:user');
+    expect(redirect.searchParams.get('scope')).toBe('read:user repo:status write:repo_hook');
     expect(redirect.searchParams.get('code_challenge_method')).toBe('S256');
     expect(redirect.searchParams.get('code_challenge')).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(response.headers['Set-Cookie']).toContain('HttpOnly');
@@ -78,5 +81,26 @@ describe('OAuth de GitHub', () => {
     });
     expect(JSON.stringify(response.body)).not.toContain('secret-token');
     expect(JSON.stringify(response.body)).not.toContain('secret-refresh');
+  });
+
+  test('registra los eventos de salud requeridos en GitHub', async () => {
+    global.fetch = jest.fn().mockResolvedValue({ ok: true });
+
+    await registerRepositoryWebhook('secret-token', { owner: 'devgotchi', name: 'example' });
+
+    const request = global.fetch.mock.calls[0];
+    const options = request[1];
+    const body = JSON.parse(options.body);
+    expect(body.events).toEqual(expect.arrayContaining([
+      'workflow_run',
+      'check_suite',
+      'deployment_status',
+      'dependabot_alert',
+      'code_scanning_alert',
+      'secret_scanning_alert',
+      'branch_protection_rule',
+    ]));
+    expect(body.config.secret).toBe('test-webhook-secret');
+    expect(options.headers.Authorization).toBe('Bearer secret-token');
   });
 });

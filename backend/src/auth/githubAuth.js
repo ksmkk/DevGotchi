@@ -3,11 +3,22 @@ const {
   GITHUB_CALLBACK_URL,
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
+  GITHUB_WEBHOOK_SECRET,
   SESSION_SECRET,
 } = require('../config/env');
+const { saveGitHubConnection } = require('./githubConnectionStore');
 
 const OAUTH_COOKIE = 'devgotchi_github_oauth';
 const OAUTH_COOKIE_MAX_AGE = 600;
+const GITHUB_WEBHOOK_EVENTS = [
+  'workflow_run',
+  'check_suite',
+  'deployment_status',
+  'dependabot_alert',
+  'code_scanning_alert',
+  'secret_scanning_alert',
+  'branch_protection_rule',
+];
 
 function requireOAuthConfig() {
   if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET || !GITHUB_CALLBACK_URL || !SESSION_SECRET) {
@@ -91,7 +102,7 @@ function buildAuthorizationUrl(state, codeChallenge) {
     client_id: GITHUB_CLIENT_ID,
     redirect_uri: GITHUB_CALLBACK_URL,
     response_type: 'code',
-    scope: 'read:user',
+    scope: 'read:user repo:status write:repo_hook',
     state,
     code_challenge: codeChallenge,
     code_challenge_method: 'S256',
@@ -159,6 +170,65 @@ async function getGitHubUser(accessToken) {
   };
 }
 
+function parseRepository(value) {
+  const match = String(value || '').trim().match(/^([^/]+)\/([^/]+)$/);
+  if (!match || !/^[A-Za-z0-9_.-]+$/.test(match[1]) || !/^[A-Za-z0-9_.-]+$/.test(match[2])) {
+    return null;
+  }
+  return { owner: match[1], name: match[2] };
+}
+
+async function getGitHubRepository(accessToken, repository) {
+  const response = await fetch(`https://api.github.com/repos/${repository.owner}/${repository.name}`, {
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${accessToken}`,
+      'User-Agent': 'DevGotchi',
+    },
+  });
+  if (!response.ok) {
+    const error = new Error('GitHub rechazó el repositorio solicitado');
+    error.statusCode = 502;
+    throw error;
+  }
+  return response.json();
+}
+
+async function registerRepositoryWebhook(accessToken, repository) {
+  const webhookUrl = process.env.GITHUB_WEBHOOK_URL;
+  if (!webhookUrl || !GITHUB_WEBHOOK_SECRET) {
+    const error = new Error('GITHUB_WEBHOOK_URL y GITHUB_WEBHOOK_SECRET son obligatorios');
+    error.statusCode = 503;
+    throw error;
+  }
+
+  const response = await fetch(`https://api.github.com/repos/${repository.owner}/${repository.name}/hooks`, {
+    method: 'POST',
+    headers: {
+      Accept: 'application/vnd.github+json',
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'DevGotchi',
+    },
+    body: JSON.stringify({
+      name: 'web',
+      active: true,
+      events: GITHUB_WEBHOOK_EVENTS,
+      config: {
+        url: webhookUrl,
+        content_type: 'json',
+        insecure_ssl: '0',
+        secret: GITHUB_WEBHOOK_SECRET,
+      },
+    }),
+  });
+  if (!response.ok) {
+    const error = new Error('GitHub rechazó el registro del webhook');
+    error.statusCode = 502;
+    throw error;
+  }
+}
+
 function startGitHubOAuth(req, res) {
   requireOAuthConfig();
   const cookie = createSignedOAuthState();
@@ -187,7 +257,30 @@ async function completeGitHubOAuth(req, res) {
   try {
     const token = await exchangeCode(String(req.query.code), stored.codeVerifier);
     const user = await getGitHubUser(token.accessToken);
-    return res.status(200).json({ connected: true, user });
+    const repository = parseRepository(req.query.repository);
+    let repositoryData;
+    if (req.query.repository && !repository) {
+      return res.status(400).json({ error: 'Repositorio de GitHub inválido' });
+    }
+
+    if (repository) {
+      repositoryData = await getGitHubRepository(token.accessToken, repository);
+      await registerRepositoryWebhook(token.accessToken, repository);
+      saveGitHubConnection({
+        accessToken: token.accessToken,
+        devgotchiId: req.query.devgotchi_id,
+        expiresAt: token.expiresAt,
+        githubUserId: user.id,
+        refreshToken: token.refreshToken,
+        repository: repositoryData.full_name || `${repository.owner}/${repository.name}`,
+      });
+    }
+
+    return res.status(200).json({
+      connected: true,
+      ...(repository ? { repository: repositoryData.full_name } : {}),
+      user,
+    });
   } catch (error) {
     return res.status(error.statusCode || 502).json({ error: error.message });
   }
@@ -196,6 +289,9 @@ async function completeGitHubOAuth(req, res) {
 module.exports = {
   completeGitHubOAuth,
   OAUTH_COOKIE,
+  GITHUB_WEBHOOK_EVENTS,
+  getGitHubRepository,
+  registerRepositoryWebhook,
   readSignedOAuthState,
   startGitHubOAuth,
 };
