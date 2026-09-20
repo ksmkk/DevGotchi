@@ -49,4 +49,24 @@ describe('evaluateProjectHealth', () => {
     expect(result.health).toBe('unknown');
     expect(result.vida).toBe(50);
   });
+
+  test('debe interpretar un workflow_run de GitHub Actions', () => {
+    const result = evaluateProjectHealth({
+      repository: {
+        full_name: 'acme/api',
+        html_url: 'https://github.com/acme/api',
+      },
+      workflow_run: {
+        conclusion: 'failure',
+        head_branch: 'develop',
+        name: 'CI',
+      },
+    });
+
+    expect(result.project).toBe('acme/api');
+    expect(result.repositoryUrl).toBe('https://github.com/acme/api');
+    expect(result.branch).toBe('develop');
+    expect(result.workflow).toBe('CI');
+    expect(result.vida).toBe(25);
+  });
 });

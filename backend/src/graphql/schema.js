@@ -1,80 +1,275 @@
-const { buildSchema, graphql } = require('graphql');
-const { pool } = require('../db/database');
+const { gql } = require('apollo-server-express');
 
-const schema = buildSchema(`
-  type DevGotchi {
+/**
+ * SCHEMA DE GRAPHQL - DevGotchi
+ * 
+ * Este archivo define la ESTRUCTURA de los datos disponibles en GraphQL.
+ * Piensa en esto como un "contrato" que dice:
+ * - Qué tipos de datos existen (User, Project, etc)
+ * - Qué campos tiene cada tipo
+ * - Qué operaciones puedo hacer (queries y mutations)
+ */
+
+const typeDefs = gql`
+  # =====================
+  # TIPOS (Types)
+  # =====================
+  
+  """
+  Tipo User: Representa un usuario del sistema
+  """
+  type User {
+    id: ID!                    # ID único, obligatorio
+    uuid: String!              # UUID generado por la BD
+    email: String!
+    username: String!
+    fullName: String
+    avatarUrl: String
+    status: String             # active, inactive, banned
+    projects: [Project!]!      # Lista de proyectos del usuario
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  """
+  Tipo Project: Representa un proyecto DevGotchi
+  """
+  type Project {
+    id: ID!
+    uuid: String!
+    userId: ID!
+    user: User!                # Relación: quién es el propietario
+    name: String!
+    description: String
+    repositoryUrl: String
+    status: String             # active, archived, deleted
+    devgotchiHealth: Int!      # 0-100
+    devgotchiMood: String!     # happy, sad, neutral, angry
+    lastCommitDate: String
+    activities: [Activity!]!   # Actividades del proyecto
+    healthHistory: [HealthRecord!]!  # Histórico de salud
+    webhooks: [Webhook!]!      # Webhooks del proyecto
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  """Vista compatible con el contrato del frontend de DevGotchi."""
+  type Devgotchi {
     id: ID!
     nombre: String!
     vida_actual: Int!
     repository_url: String
+    uuid: String!
+    userId: ID!
+    name: String!
+    repositoryUrl: String
+    devgotchiHealth: Int!
+    devgotchiMood: String!
+    status: String
   }
 
+  """
+  Tipo Activity: Representa una actividad/evento en el proyecto
+  (commits, PRs, issues, etc)
+  """
+  type Activity {
+    id: ID!
+    uuid: String!
+    projectId: ID!
+    project: Project!
+    activityType: String!     # commit, pr_opened, pr_closed, issue
+    description: String
+    metadata: String          # JSON como string (alternativa: usar Scalar)
+    healthImpact: Int         # -10 a 10
+    moodImpact: String
+    createdAt: String!
+  }
+
+  """
+  Tipo HealthRecord: Registro histórico de salud del DevGotchi
+  """
+  type HealthRecord {
+    id: ID!
+    uuid: String!
+    projectId: ID!
+    project: Project!
+    healthValue: Int!
+    mood: String!
+    createdAt: String!
+  }
+
+  """
+  Tipo Webhook: Configuración de webhooks para un proyecto
+  """
+  type Webhook {
+    id: ID!
+    uuid: String!
+    projectId: ID!
+    project: Project!
+    webhookUrl: String!
+    eventType: String!        # push, pull_request, issue
+    isActive: Boolean!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  # =====================
+  # QUERIES (Lectura de datos)
+  # =====================
+  
   type Query {
-    devgotchi: DevGotchi
+    """Devuelve el DevGotchi del primer proyecto conectado."""
+    devgotchi: Devgotchi
+
+    """
+    Obtener todos los usuarios del sistema
+    """
+    users: [User!]!
+
+    """
+    Obtener un usuario específico por ID
+    """
+    user(id: ID!): User
+
+    """
+    Obtener todos los proyectos
+    """
+    projects: [Project!]!
+
+    """
+    Obtener un proyecto específico por ID
+    """
+    project(id: ID!): Project
+
+    """
+    Obtener proyectos de un usuario específico
+    """
+    userProjects(userId: ID!): [Project!]!
+
+    """
+    Obtener actividades de un proyecto
+    """
+    projectActivities(projectId: ID!): [Activity!]!
+
+    """
+    Obtener historial de salud de un proyecto
+    """
+    projectHealthHistory(projectId: ID!): [HealthRecord!]!
+
+    """
+    Obtener webhooks de un proyecto
+    """
+    projectWebhooks(projectId: ID!): [Webhook!]!
   }
 
+  # =====================
+  # MUTATIONS (Modificación de datos)
+  # =====================
+  
   type Mutation {
-    cuidarDevgotchi: DevGotchi!
-    conectarRepositorio(repository_url: String!): DevGotchi!
+    """Conecta un repositorio y crea o actualiza su DevGotchi."""
+    conectarRepositorio(repositoryUrl: String!): Devgotchi
+
+    """
+    Crear un nuevo usuario
+    """
+    createUser(
+      email: String!
+      username: String!
+      password: String!
+      fullName: String
+    ): User
+
+    """
+    Actualizar un usuario
+    """
+    updateUser(
+      id: ID!
+      email: String
+      username: String
+      fullName: String
+      avatarUrl: String
+    ): User
+
+    """
+    Crear un nuevo proyecto
+    """
+    createProject(
+      userId: ID!
+      name: String!
+      description: String
+      repositoryUrl: String
+    ): Project
+
+    """
+    Actualizar un proyecto
+    """
+    updateProject(
+      id: ID!
+      name: String
+      description: String
+      repositoryUrl: String
+      status: String
+    ): Project
+
+    """
+    Actualizar la salud del DevGotchi
+    """
+    updateDevgotchiHealth(
+      projectId: ID!
+      healthValue: Int!
+      mood: String!
+    ): Project
+
+    """
+    Cuida al DevGotchi y recupera 10 puntos de salud
+    """
+    cuidarDevgotchi(projectId: ID): Devgotchi
+
+    """
+    Reduce 10 puntos de vida del DevGotchi
+    """
+    disminuirVida(projectId: ID!): Project
+
+    """
+    Registrar una actividad en un proyecto
+    """
+    createActivity(
+      projectId: ID!
+      activityType: String!
+      description: String
+      metadata: String
+      healthImpact: Int
+      moodImpact: String
+    ): Activity
+
+    """
+    Crear un webhook para un proyecto
+    """
+    createWebhook(
+      projectId: ID!
+      webhookUrl: String!
+      eventType: String!
+    ): Webhook
+
+    """
+    Activar/desactivar un webhook
+    """
+    toggleWebhook(
+      id: ID!
+      isActive: Boolean!
+    ): Webhook
+
+    """
+    Eliminar un proyecto
+    """
+    deleteProject(id: ID!): Boolean
+
+    """
+    Eliminar un usuario
+    """
+    deleteUser(id: ID!): Boolean
   }
-`);
+`;
 
-async function getDevGotchi() {
-  const result = await pool.query(
-    `SELECT id, nombre, vida_actual, repository_url
-     FROM devgotchi
-     ORDER BY id
-     LIMIT 1`,
-  );
-
-  if (result.rows[0]) {
-    return result.rows[0];
-  }
-
-  const created = await pool.query(
-    `INSERT INTO devgotchi (nombre, vida_actual)
-     VALUES ('Pixel', 72)
-     RETURNING id, nombre, vida_actual, repository_url`,
-  );
-
-  return created.rows[0];
-}
-
-const rootValue = {
-  devgotchi: getDevGotchi,
-  cuidarDevgotchi: async () => {
-    const current = await getDevGotchi();
-    const result = await pool.query(
-      `UPDATE devgotchi
-       SET vida_actual = LEAST(100, vida_actual + 10)
-       WHERE id = $1
-       RETURNING id, nombre, vida_actual, repository_url`,
-      [current.id],
-    );
-
-    return result.rows[0];
-  },
-  conectarRepositorio: async ({ repository_url: repositoryUrl }) => {
-    const current = await getDevGotchi();
-    const result = await pool.query(
-      `UPDATE devgotchi
-       SET repository_url = $1
-       WHERE id = $2
-       RETURNING id, nombre, vida_actual, repository_url`,
-      [repositoryUrl, current.id],
-    );
-
-    return result.rows[0];
-  },
-};
-
-function executeGraphQL(query, variables) {
-  return graphql({
-    schema,
-    source: query,
-    rootValue,
-    variableValues: variables,
-  });
-}
-
-module.exports = { executeGraphQL };
+module.exports = { typeDefs };

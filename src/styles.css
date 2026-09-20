@@ -783,6 +783,18 @@ h1 {
     border-radius: 20px;
   }
 
+  .repository-form {
+    padding: 18px;
+  }
+
+  .repository-form__controls {
+    grid-template-columns: 1fr;
+  }
+
+  .repository-form button {
+    min-height: 42px;
+  }
+
   .devgotchi-card__header {
     gap: 10px;
   }
