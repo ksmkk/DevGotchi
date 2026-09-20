@@ -2,6 +2,7 @@ import type { HealthStatus } from "../types/devgotchi";
 
 type HealthIndicatorProps = {
   health: HealthStatus;
+  activity?: "idle" | "feeding" | "playing" | "caring";
 };
 
 const healthDetails: Record<
@@ -15,7 +16,7 @@ const healthDetails: Record<
   },
   warning: {
     expression: "◉_◉",
-    label: "Atención",
+    label: "Bajo",
     description: "DevGotchi está atento y necesita supervisión",
   },
   critical: {
@@ -30,18 +31,25 @@ const healthDetails: Record<
   },
 };
 
-export function HealthIndicator({ health }: HealthIndicatorProps) {
+const activityExpressions = {
+  feeding: "◕ω◕",
+  playing: "◕‿◕",
+  caring: "ˆ‿ˆ",
+};
+
+export function HealthIndicator({ health, activity = "idle" }: HealthIndicatorProps) {
   const details = healthDetails[health];
+  const expression = activity === "idle" ? details.expression : activityExpressions[activity];
 
   return (
     <div
-      className={`health-indicator health-indicator--${health}`}
+      className={`health-indicator health-indicator--${health} health-indicator--${activity}`}
       role="img"
       aria-label={details.description}
     >
       <span className="health-indicator__antenna" aria-hidden="true" />
       <span className="health-indicator__face" aria-hidden="true">
-        {details.expression}
+        {expression}
       </span>
       <span className="health-indicator__label">{details.label}</span>
     </div>

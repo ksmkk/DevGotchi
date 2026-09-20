@@ -1,9 +1,11 @@
 import { StrictMode } from "react";
+import { ApolloProvider } from "@apollo/client/react";
 import { createRoot } from "react-dom/client";
 import { ApolloClient, InMemoryCache } from "@apollo/client/core";
 import { HttpLink } from "@apollo/client/link/http";
 import { ApolloProvider } from "@apollo/client/react";
 import App from "./App";
+import { apolloClient } from "./lib/apolloClient";
 import "./styles.css";
 
 const client = new ApolloClient({
@@ -15,7 +17,7 @@ const client = new ApolloClient({
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ApolloProvider client={client}>
+    <ApolloProvider client={apolloClient}>
       <App />
     </ApolloProvider>
   </StrictMode>,
