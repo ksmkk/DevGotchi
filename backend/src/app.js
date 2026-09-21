@@ -7,21 +7,13 @@ const projectsRoutes = require('./routes/projects.routes');
 const { typeDefs } = require('./graphql/schema');
 const { resolvers } = require('./graphql/resolvers');
 const { pool, dbType } = require('../db/database');
+const githubAuthRoutes = require('./routes/githubAuth.routes');
+const githubWebhookRoutes = require('./routes/githubWebhook.routes');
+const { FRONTEND_URL } = require('./config/env');
 
 const app = express();
 
-// Middleware
 app.use(cors());
-app.use(express.json({
-  verify: (req, res, buffer) => {
-    req.rawBody = buffer;
-  },
-}));
-const githubAuthRoutes = require('./routes/githubAuth.routes');
-const githubWebhookRoutes = require('./routes/githubWebhook.routes');
-const { executeGraphQL } = require('./graphql/schema');
-const { FRONTEND_URL } = require('./config/env');
-
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', FRONTEND_URL || 'http://127.0.0.1:5173');
@@ -35,21 +27,15 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use('/api/auth', githubAuthRoutes);
+// GitHub requires the exact raw body to validate X-Hub-Signature-256.
+// This route must be registered before express.json consumes the request body.
 app.use('/api/github/webhook', githubWebhookRoutes);
-
-
-
-app.post('/graphql', async (req, res) => {
-  const { query, variables } = req.body || {};
-
-  if (!query) {
-    return res.status(400).json({ errors: [{ message: 'Falta la consulta GraphQL' }] });
-  }
-
-  const result = await executeGraphQL(query, variables);
-  return res.status(result.errors ? 400 : 200).json(result);
-});
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = buffer;
+  },
+}));
+app.use('/api/auth', githubAuthRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -134,5 +120,6 @@ app.use((error, req, res, next) => {
   });
 });
 
-module.exports = { app, startApolloServer };
+module.exports = app;
+module.exports.startApolloServer = startApolloServer;
 

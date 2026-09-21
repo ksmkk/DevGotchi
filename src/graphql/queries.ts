@@ -30,7 +30,7 @@ export const CARE_FOR_DEVGOTCHI = gql`
 export const CONNECT_REPOSITORY = gql`
   ${DEV_GOTCHI_FIELDS}
   mutation ConnectRepository($repositoryUrl: String!) {
-    conectarRepositorio(repository_url: $repositoryUrl) {
+    conectarRepositorio(repositoryUrl: $repositoryUrl) {
       ...DevGotchiFields
     }
   }

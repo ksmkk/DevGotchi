@@ -343,10 +343,10 @@ const resolvers = {
 
         // Registrar en el historial
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, $3)
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, $4)
         `;
-        await db.query(insertHistoryQuery, [projectId, clampedHealth, mood]);
+        await db.query(insertHistoryQuery, [randomUUID(), projectId, clampedHealth, mood]);
 
         return formatProject(projectResult.rows[0]);
       } catch (error) {
@@ -379,10 +379,10 @@ const resolvers = {
         const updatedProject = await db.query(updateProjectQuery, [newHealth, targetProjectId]);
 
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, 'happy')
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, 'happy')
         `;
-        await db.query(insertHistoryQuery, [targetProjectId, newHealth]);
+        await db.query(insertHistoryQuery, [randomUUID(), targetProjectId, newHealth]);
 
         return formatProject(updatedProject.rows[0]);
       } catch (error) {
@@ -412,10 +412,10 @@ const resolvers = {
         const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
 
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, 'sad')
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, 'sad')
         `;
-        await db.query(insertHistoryQuery, [projectId, newHealth]);
+        await db.query(insertHistoryQuery, [randomUUID(), projectId, newHealth]);
 
         return formatProject(updatedProject.rows[0]);
       } catch (error) {

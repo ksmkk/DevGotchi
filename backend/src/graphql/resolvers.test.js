@@ -26,7 +26,11 @@ describe('Mutation.cuidarDevgotchi', () => {
     expect(result.devgotchiHealth).toBe(50);
     expect(result.devgotchiMood).toBe('happy');
     expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('SET devgotchi_health = $1'), [50, 7]);
-    expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('INSERT INTO health_history'), [7, 50]);
+    expect(db.query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO health_history'),
+      [expect.any(String), 7, 50],
+    );
   });
 
   test('no supera 100 puntos de salud', async () => {
@@ -82,7 +86,11 @@ describe('Mutation.disminuirVida', () => {
     expect(result.devgotchiHealth).toBe(30);
     expect(result.devgotchiMood).toBe('sad');
     expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('SET devgotchi_health = $1'), [30, 7]);
-    expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('INSERT INTO health_history'), [7, 30]);
+    expect(db.query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO health_history'),
+      [expect.any(String), 7, 30],
+    );
   });
 
   test('no baja de 0 puntos de salud', async () => {

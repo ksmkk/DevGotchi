@@ -11,21 +11,18 @@ if (config.DB_HOST && config.DB_HOST !== 'localhost') {
 
 // SQLite para desarrollo local
 if (dbType === 'sqlite') {
-  const Database = require('better-sqlite3');
+  const { DatabaseSync } = require('node:sqlite');
   const dbPath = path.join(__dirname, '../../devgotchi.db');
-  
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  
-  // Wrapper para que sea compatible con el interfaz de PostgreSQL
+
+  const db = new DatabaseSync(dbPath);
+  db.exec('PRAGMA journal_mode = WAL');
+
+  // Wrapper compatible con la interfaz usada por PostgreSQL.
   pool = {
     query: (sql, params = []) => {
       try {
-        // Convertir placeholders de PostgreSQL ($1, $2) a ?
         let sqlQuery = sql.replace(/\$(\d+)/g, '?');
-        
         const stmt = db.prepare(sqlQuery);
-        
         const isReturningQuery = /\bRETURNING\b/i.test(sqlQuery);
 
         if (sqlQuery.trim().toUpperCase().startsWith('SELECT') || isReturningQuery) {
@@ -49,7 +46,7 @@ if (dbType === 'sqlite') {
       };
       return client;
     },
-    end: () => db.close()
+    end: () => db.close(),
   };
   
   console.log(`📁 Usando SQLite en: ${dbPath}`);
