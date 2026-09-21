@@ -14,6 +14,7 @@ conectar un repositorio de GitHub.
 
 Verifica las herramientas:
 
+Para conectar todo, usamos REST para recibir los webhooks de GitHub Actions y GraphQL para consultar el estado desde React. El frontend actualiza la tarjeta mediante polling.
 ```bash
 node --version
 npm --version
@@ -25,6 +26,17 @@ docker compose version
 
 Clona el repositorio y entra en su carpeta:
 
+1. Clonar el repositorio.
+2. Para el backend:
+   - Entrar a la carpeta `backend`.
+   - Instalar dependencias con `npm install`.
+   - Levantar el servidor con `npm run dev`.
+3. Para el frontend: entrar a la carpeta y correr `npm install`.
+4. Levantar la base de datos siguiendo la sección de PostgreSQL.
+5. Abrir `http://localhost:5173` y conectar una URL de GitHub desde el formulario.
+
+El frontend consulta GraphQL en `http://localhost:3000/graphql`. Para cambiarlo,
+definir `VITE_GRAPHQL_URL` antes de ejecutar Vite.
 ```bash
 git clone <URL_DEL_REPOSITORIO>
 cd DevGotchi
@@ -32,6 +44,13 @@ cd DevGotchi
 
 Instala las dependencias de cada aplicacion:
 
+1. Copiar `.env.example` a `.env` en la carpeta `backend`.
+2. Desde la raíz del proyecto, iniciar PostgreSQL: `docker compose up -d`.
+3. En la carpeta `backend`, instalar dependencias: `npm install`.
+4. Iniciar el servidor: `npm run dev`.
+5. Verificar conexión: `curl http://localhost:3000/estado-db`.
+
+El backend inicializa automáticamente el esquema de la base de datos al arrancar.
 ```bash
 cd backend
 npm install
@@ -48,6 +67,17 @@ locales estan ignorados por Git.
 
 ### Backend
 
+Eso permite que el frontend solo se preocupe por renderizar la mascota según el estado del proyecto.
+
+### Flujo GitHub Actions
+
+1. Configurar `GITHUB_WEBHOOK_SECRET` en `backend/.env` y usar el mismo secreto en GitHub.
+2. Crear un webhook apuntando a `POST /api/webhooks/project-status`.
+3. Seleccionar el evento `Workflow runs` y enviar el formato JSON.
+4. Conectar primero el repositorio desde el formulario del frontend.
+
+Cuando el secreto está configurado, el backend valida `X-Hub-Signature-256` y guarda
+la nueva vida en `projects` y `health_history`.
 Copia el ejemplo:
 
 ```bash
