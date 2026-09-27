@@ -28,10 +28,5 @@ export type HealthResponse = {
   data: DevGotchiData;
 };
 
-export type DevGotchiApiData = {
-  __typename?: "Devgotchi";
-  id: string;
-  nombre: string;
-  vida_actual: number;
-  repository_url: string | null;
-};
+export type DevGotchiApiData =
+  import("../../frontend/src/__generated__/graphql").DevGotchiFieldsFragment;

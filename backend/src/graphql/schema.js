@@ -58,6 +58,7 @@ const typeDefs = gql`
     id: ID!
     nombre: String!
     vida_actual: Int!
+    salud: SaludRepositorio!
     repository_url: String
     uuid: String!
     userId: ID!
@@ -66,6 +67,14 @@ const typeDefs = gql`
     devgotchiHealth: Int!
     devgotchiMood: String!
     status: String
+  }
+
+  """Estado actual de salud del repositorio conectado."""
+  type SaludRepositorio {
+    puntosVida: Int!
+    ultimoCommit: String
+    """Valores posibles: Feliz, Triste o Muerto."""
+    estado: String!
   }
 
   """
