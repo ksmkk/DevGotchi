@@ -135,6 +135,44 @@ describe("vista interactiva de DevGotchi", () => {
       .toHaveAttribute("href", repositoryUrl);
   });
 
+  it("muestra el formulario y crea el DevGotchi cuando la base está vacía", async () => {
+    const repositoryUrl = "https://github.com/devgotchi/app";
+    const emptyQueryMock = {
+      request: { query: GET_DEVGOTCHI },
+      result: { data: { devgotchi: null } },
+    };
+    const connectMock = {
+      request: {
+        query: CONNECT_REPOSITORY,
+        variables: { repositoryUrl },
+      },
+      result: {
+        data: {
+          conectarRepositorio: { ...devgotchi, repository_url: repositoryUrl },
+        },
+      },
+    };
+
+    render(
+      <MockedProvider mocks={[emptyQueryMock, connectMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Conecta tu primer repositorio" }))
+      .toBeVisible();
+    expect(screen.queryByText("No se encontró DevGotchi")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("URL del repositorio de GitHub"), {
+      target: { value: repositoryUrl },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Conectar" }));
+
+    expect(await screen.findByRole("heading", { name: "Pixel" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "devgotchi/app" }))
+      .toHaveAttribute("href", repositoryUrl);
+  });
+
   it("rechaza URLs que no pertenecen a un repositorio de GitHub", async () => {
     render(
       <MockedProvider mocks={[queryMock]}>

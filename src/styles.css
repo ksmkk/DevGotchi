@@ -53,6 +53,34 @@ progress {
   border-top: 4px solid #b8423c;
 }
 
+.empty-state {
+  width: min(100%, 620px);
+  padding: clamp(28px, 6vw, 48px);
+  border: 1px solid rgb(23 33 26 / 12%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 94%);
+  box-shadow: 0 24px 70px rgb(31 54 39 / 14%);
+}
+
+.empty-state__icon {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 22px;
+  place-items: center;
+  border-radius: 15px;
+  color: white;
+  background: #17211a;
+  font-size: 1.5rem;
+}
+
+.empty-state > p:not(.panel__eyebrow) {
+  max-width: 500px;
+  margin: 14px 0 26px;
+  color: #657168;
+  line-height: 1.6;
+}
+
 .app-shell {
   min-height: 100vh;
   padding: 52px 24px 72px;

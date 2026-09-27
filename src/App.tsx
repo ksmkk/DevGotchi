@@ -15,6 +15,50 @@ import type {
 
 const githubRepositoryPattern = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/i;
 
+type RepositoryFormProps = {
+  error?: string;
+  loading: boolean;
+  message?: string;
+  onChange: (value: string) => void;
+  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  value: string;
+};
+
+function RepositoryForm({
+  error,
+  loading,
+  message,
+  onChange,
+  onSubmit,
+  value,
+}: RepositoryFormProps) {
+  return (
+    <form className="repository-form" onSubmit={onSubmit}>
+      <label htmlFor="repository-url">URL del repositorio de GitHub</label>
+      <div className="repository-form__row">
+        <input
+          id="repository-url"
+          type="url"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="https://github.com/usuario/repo"
+          aria-describedby="repository-feedback"
+        />
+        <button type="submit" disabled={loading}>
+          {loading ? "Conectando…" : "Conectar"}
+        </button>
+      </div>
+      <p
+        id="repository-feedback"
+        className={error ? "form-feedback form-feedback--error" : "form-feedback"}
+        role={error ? "alert" : "status"}
+      >
+        {error ?? message ?? "Solo repositorios de GitHub."}
+      </p>
+    </form>
+  );
+}
+
 function App() {
   const showTechnicalOptions = import.meta.env.VITE_SHOW_TECHNICAL_OPTIONS === "true";
   const [repositoryUrl, setRepositoryUrl] = useState("");
@@ -70,12 +114,46 @@ function App() {
     );
   }
 
+  async function handleRepositorySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedUrl = repositoryUrl.trim().replace(/\.git\/?$/i, "");
+
+    if (!githubRepositoryPattern.test(normalizedUrl)) {
+      setFormError("Ingresa una URL válida: https://github.com/usuario/repositorio");
+      return;
+    }
+
+    setFormError(null);
+    setConnectionMessage(null);
+
+    try {
+      await connectRepository({ variables: { repositoryUrl: normalizedUrl } });
+      setRepositoryUrl("");
+      setConnectionMessage("Repositorio conectado correctamente.");
+    } catch {
+      // Apollo expone el detalle mediante connectState.error.
+    }
+  }
+
   if (!data?.devgotchi) {
     return (
       <main className="app-shell app-shell--centered">
-        <section className="query-status" role="status">
-          <h1>No se encontró DevGotchi</h1>
-          <p>La API no devolvió una mascota.</p>
+        <section className="empty-state" aria-labelledby="empty-state-title">
+          <div className="empty-state__icon" aria-hidden="true">⌘</div>
+          <p className="panel__eyebrow">Comienza tu aventura</p>
+          <h1 id="empty-state-title">Conecta tu primer repositorio</h1>
+          <p>
+            Vincula un proyecto de GitHub para crear tu DevGotchi y empezar a cuidar
+            la salud de tu código.
+          </p>
+          <RepositoryForm
+            error={formError ?? connectState.error?.message}
+            loading={connectState.loading}
+            message={connectionMessage ?? undefined}
+            onChange={setRepositoryUrl}
+            onSubmit={(event) => void handleRepositorySubmit(event)}
+            value={repositoryUrl}
+          />
         </section>
       </main>
     );
@@ -96,27 +174,6 @@ function App() {
         },
       },
     });
-  }
-
-  async function handleRepositorySubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const normalizedUrl = repositoryUrl.trim().replace(/\.git\/?$/i, "");
-
-    if (!githubRepositoryPattern.test(normalizedUrl)) {
-      setFormError("Ingresa una URL válida: https://github.com/usuario/repositorio");
-      return;
-    }
-
-    setFormError(null);
-    setConnectionMessage(null);
-
-    try {
-      await connectRepository({ variables: { repositoryUrl: normalizedUrl } });
-      setRepositoryUrl("");
-      setConnectionMessage("Repositorio conectado correctamente.");
-    } catch {
-      // Apollo expone el detalle mediante connectState.error.
-    }
   }
 
   return (
@@ -161,29 +218,14 @@ function App() {
                 </div>
               ) : null}
 
-              <form className="repository-form" onSubmit={(event) => void handleRepositorySubmit(event)}>
-                <label htmlFor="repository-url">URL del repositorio de GitHub</label>
-                <div className="repository-form__row">
-                  <input
-                    id="repository-url"
-                    type="url"
-                    value={repositoryUrl}
-                    onChange={(event) => setRepositoryUrl(event.target.value)}
-                    placeholder="https://github.com/usuario/repo"
-                    aria-describedby="repository-feedback"
-                  />
-                  <button type="submit" disabled={connectState.loading}>
-                    {connectState.loading ? "Conectando…" : "Conectar"}
-                  </button>
-                </div>
-                <p
-                  id="repository-feedback"
-                  className={formError || connectState.error ? "form-feedback form-feedback--error" : "form-feedback"}
-                  role={formError || connectState.error ? "alert" : "status"}
-                >
-                  {formError ?? connectState.error?.message ?? connectionMessage ?? "Solo repositorios de GitHub."}
-                </p>
-              </form>
+              <RepositoryForm
+                error={formError ?? connectState.error?.message}
+                loading={connectState.loading}
+                message={connectionMessage ?? undefined}
+                onChange={setRepositoryUrl}
+                onSubmit={(event) => void handleRepositorySubmit(event)}
+                value={repositoryUrl}
+              />
             </section>
 
             <section className="panel state-panel">
