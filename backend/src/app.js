@@ -10,8 +10,10 @@ const { pool, dbType } = require('../db/database');
 const githubAuthRoutes = require('./routes/githubAuth.routes');
 const githubWebhookRoutes = require('./routes/githubWebhook.routes');
 const { FRONTEND_URL } = require('./config/env');
+const { startHealthDecayCron } = require('./services/cronService');
 
 const app = express();
+let healthDecayTask;
 
 app.use(cors());
 
@@ -98,10 +100,15 @@ async function startApolloServer() {
   // Iniciar el servidor
   await server.start();
 
+  if (!healthDecayTask) {
+    healthDecayTask = startHealthDecayCron(pool);
+  }
+
   // Integrar con Express en el endpoint /graphql
   server.applyMiddleware({
     app,
     path: '/graphql',
+    bodyParserConfig: false,
     cors: {
       origin: '*',
       credentials: true,

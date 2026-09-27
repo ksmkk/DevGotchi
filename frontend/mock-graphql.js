@@ -2,7 +2,7 @@ import http from "node:http";
 
 const PORT = 3000;
 let devgotchi = {
-  __typename: "DevGotchi",
+  __typename: "Devgotchi",
   id: "1",
   nombre: "Pixel",
   vida_actual: 72,

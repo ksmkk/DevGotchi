@@ -6,12 +6,12 @@ import {
   CONNECT_REPOSITORY,
   GET_DEVGOTCHI,
 } from "./graphql/queries";
-import type { DevGotchiApiData } from "./types/devgotchi";
-
-type DevGotchiQueryData = { devgotchi: DevGotchiApiData | null };
-type CareMutationData = { cuidarDevgotchi: DevGotchiApiData };
-type ConnectMutationData = { conectarRepositorio: DevGotchiApiData };
-type ConnectMutationVariables = { repositoryUrl: string };
+import type {
+  CareForDevGotchiMutation,
+  ConnectRepositoryMutation,
+  ConnectRepositoryMutationVariables,
+  GetDevGotchiQuery,
+} from "../frontend/src/__generated__/graphql";
 
 const githubRepositoryPattern = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/i;
 
@@ -20,10 +20,10 @@ function App() {
   const [repositoryUrl, setRepositoryUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [connectionMessage, setConnectionMessage] = useState<string | null>(null);
-  const { data, error, loading, refetch } = useQuery<DevGotchiQueryData>(
+  const { data, error, loading, refetch } = useQuery<GetDevGotchiQuery>(
     GET_DEVGOTCHI,
   );
-  const [careForDevGotchi, careState] = useMutation<CareMutationData>(
+  const [careForDevGotchi, careState] = useMutation<CareForDevGotchiMutation>(
     CARE_FOR_DEVGOTCHI,
     {
       update(cache, result) {
@@ -37,8 +37,8 @@ function App() {
     },
   );
   const [connectRepository, connectState] = useMutation<
-    ConnectMutationData,
-    ConnectMutationVariables
+    ConnectRepositoryMutation,
+    ConnectRepositoryMutationVariables
   >(CONNECT_REPOSITORY, {
     update(cache, result) {
       if (result.data?.conectarRepositorio) {
@@ -88,8 +88,11 @@ function App() {
       optimisticResponse: {
         cuidarDevgotchi: {
           ...devgotchi,
-          __typename: "DevGotchi",
           vida_actual: Math.min(100, devgotchi.vida_actual + 10),
+          salud: {
+            ...devgotchi.salud,
+            puntosVida: Math.min(100, devgotchi.vida_actual + 10),
+          },
         },
       },
     });

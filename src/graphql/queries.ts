@@ -1,11 +1,16 @@
 import { gql } from "@apollo/client";
 
 const DEV_GOTCHI_FIELDS = gql`
-  fragment DevGotchiFields on DevGotchi {
+  fragment DevGotchiFields on Devgotchi {
     id
     nombre
     vida_actual
     repository_url
+    salud {
+      puntosVida
+      ultimoCommit
+      estado
+    }
   }
 `;
 

@@ -54,10 +54,11 @@ const typeDefs = gql`
   }
 
   """Vista compatible con el contrato del frontend de DevGotchi."""
-  type DevGotchi {
+  type Devgotchi {
     id: ID!
     nombre: String!
     vida_actual: Int!
+    salud: SaludRepositorio!
     repository_url: String
     uuid: String!
     userId: ID!
@@ -66,6 +67,14 @@ const typeDefs = gql`
     devgotchiHealth: Int!
     devgotchiMood: String!
     status: String
+  }
+
+  """Estado actual de salud del repositorio conectado."""
+  type SaludRepositorio {
+    puntosVida: Int!
+    ultimoCommit: String
+    """Valores posibles: Feliz, Triste o Muerto."""
+    estado: String!
   }
 
   """
@@ -119,7 +128,7 @@ const typeDefs = gql`
   
   type Query {
     """Devuelve el DevGotchi del primer proyecto conectado."""
-    devgotchi: DevGotchi
+    devgotchi: Devgotchi
 
     """
     Obtener todos los usuarios del sistema
@@ -168,7 +177,7 @@ const typeDefs = gql`
   
   type Mutation {
     """Conecta un repositorio y crea o actualiza su DevGotchi."""
-    conectarRepositorio(repositoryUrl: String!): DevGotchi
+    conectarRepositorio(repositoryUrl: String!): Devgotchi
 
     """
     Crear un nuevo usuario
@@ -224,7 +233,7 @@ const typeDefs = gql`
     """
     Cuida al DevGotchi y recupera 10 puntos de salud
     """
-    cuidarDevgotchi(projectId: ID): DevGotchi
+    cuidarDevgotchi(projectId: ID): Devgotchi
 
     """
     Reduce 10 puntos de vida del DevGotchi

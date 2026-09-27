@@ -16,6 +16,43 @@ async function executeGraphQL(query, variables, db) {
 }
 
 describe('operaciones GraphQL de DevGotchi', () => {
+  test.each([
+    { puntosVida: 40, animo: 'sad', estado: 'Triste' },
+    { puntosVida: 0, animo: 'sad', estado: 'Muerto' },
+    { puntosVida: 78, animo: 'happy', estado: 'Feliz' },
+  ])('devgotchi devuelve la salud del repositorio en estado $estado', async ({ puntosVida, animo, estado }) => {
+    const db = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          user_id: 2,
+          devgotchi_health: puntosVida,
+          devgotchi_mood: animo,
+          last_commit_date: '2025-03-08T12:00:00.000Z',
+        }],
+      }),
+    };
+
+    const result = await executeGraphQL(`
+      query {
+        devgotchi {
+          salud {
+            puntosVida
+            ultimoCommit
+            estado
+          }
+        }
+      }
+    `, undefined, db);
+
+    expect(result.errors).toBeUndefined();
+    expect(result.data.devgotchi.salud).toEqual({
+      puntosVida,
+      ultimoCommit: '2025-03-08T12:00:00.000Z',
+      estado,
+    });
+  });
+
   test('cuidarDevgotchi incrementa la vida y respeta el máximo', async () => {
     const db = {
       query: jest.fn()
@@ -44,6 +81,7 @@ describe('operaciones GraphQL de DevGotchi', () => {
 
     expect(result.errors).toBeUndefined();
     expect(result.data.cuidarDevgotchi).toEqual({ id: '1', vida_actual: 100 });
+    expect(db.query).toHaveBeenCalledTimes(3);
   });
 
   test('conectarRepositorio usa el argumento y tipo esperados por el frontend', async () => {
@@ -75,5 +113,11 @@ describe('operaciones GraphQL de DevGotchi', () => {
     expect(result.errors).toBeUndefined();
     expect(result.data.conectarRepositorio.repository_url)
       .toBe('https://github.com/devgotchi/app');
+    expect(db.query.mock.calls[2][1]).toEqual([
+      expect.any(String),
+      1,
+      'app',
+      'https://github.com/devgotchi/app',
+    ]);
   });
 });
