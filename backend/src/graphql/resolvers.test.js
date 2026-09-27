@@ -183,6 +183,44 @@ describe('Mutation.conectarRepositorio', () => {
     );
   });
 
+  test('crea un usuario local al conectar el primer repositorio en una base vacía', async () => {
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 1,
+            uuid: 'project-uuid',
+            user_id: 1,
+            name: 'nuevo-proyecto',
+            repository_url: 'https://github.com/acme/nuevo-proyecto',
+            devgotchi_health: 100,
+            devgotchi_mood: 'neutral',
+          }],
+        }),
+    };
+
+    const result = await resolvers.Mutation.conectarRepositorio(
+      null,
+      { repositoryUrl: 'https://github.com/acme/nuevo-proyecto' },
+      { db },
+    );
+
+    expect(result.repositoryUrl).toBe('https://github.com/acme/nuevo-proyecto');
+    expect(db.query).toHaveBeenNthCalledWith(
+      3,
+      expect.stringContaining('INSERT INTO users'),
+      expect.arrayContaining(['local@devgotchi.invalid', 'devgotchi-local']),
+    );
+    expect(db.query).toHaveBeenNthCalledWith(
+      4,
+      expect.stringContaining('INSERT INTO projects'),
+      expect.arrayContaining([1, 'nuevo-proyecto']),
+    );
+  });
+
   test('devuelve el proyecto existente y no crea otro para la misma URL normalizada', async () => {
     const existingProject = {
       id: 8,

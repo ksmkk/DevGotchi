@@ -1,5 +1,36 @@
 const { randomUUID } = require('crypto');
 
+const LOCAL_USER_EMAIL = 'local@devgotchi.invalid';
+const LOCAL_USERNAME = 'devgotchi-local';
+
+const getOrCreateRepositoryOwner = async (db) => {
+  const existingUser = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
+  if (existingUser.rows.length > 0) {
+    return existingUser.rows[0].id;
+  }
+
+  const createdUser = await db.query(
+    `INSERT INTO users (uuid, email, username, password_hash, full_name)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT DO NOTHING
+     RETURNING id`,
+    [randomUUID(), LOCAL_USER_EMAIL, LOCAL_USERNAME, randomUUID(), 'Usuario local'],
+  );
+
+  if (createdUser.rows.length > 0) {
+    return createdUser.rows[0].id;
+  }
+
+  const concurrentlyCreatedUser = await db.query(
+    'SELECT id FROM users ORDER BY id ASC LIMIT 1',
+  );
+  if (concurrentlyCreatedUser.rows.length === 0) {
+    throw new Error('No se pudo preparar el usuario local');
+  }
+
+  return concurrentlyCreatedUser.rows[0].id;
+};
+
 /**
  * RESOLVERS DE GRAPHQL - DevGotchi
  * 
@@ -183,17 +214,14 @@ const resolvers = {
         return formatProject(existing.rows[0]);
       }
 
-      const user = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
-      if (user.rows.length === 0) {
-        throw new Error('No hay un usuario disponible para conectar el repositorio');
-      }
+      const userId = await getOrCreateRepositoryOwner(db);
 
       const name = normalizedRepositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
       const result = await db.query(
         `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
          VALUES ($1, $2, $3, $4, 100, 'neutral')
          RETURNING *`,
-        [randomUUID(), user.rows[0].id, name, normalizedRepositoryUrl],
+        [randomUUID(), userId, name, normalizedRepositoryUrl],
       );
 
       return formatProject(result.rows[0]);
