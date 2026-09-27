@@ -30,8 +30,11 @@ test('analiza tests, cobertura, CI, entorno y seguridad sin exponer secretos', a
 test('penaliza tests ausentes, CI fallido, .env rastreado y falta de .gitignore', async () => {
   const fetchImpl = jest.fn(async (url) => {
     if (url.endsWith('/repos/acme/app')) return response({ default_branch: 'main' });
-    if (url.includes('/git/trees/')) return response({ tree: [{ type: 'blob', path: '.env' }] });
-    if (url.includes('/actions/workflows')) return response({ workflows: [{ id: 1 }] });
+    if (url.includes('/git/trees/')) return response({ tree: [
+      { type: 'blob', path: '.env' },
+      { type: 'blob', path: '.github/workflows/ci.yml' },
+    ] });
+    if (url.includes('/actions/workflows')) return response({ workflows: [{ id: 1, state: 'active' }] });
     if (url.includes('/actions/runs')) return response({ workflow_runs: [{ name: 'CI', status: 'completed', conclusion: 'failure' }] });
     throw new Error(`URL inesperada: ${url}`);
   });

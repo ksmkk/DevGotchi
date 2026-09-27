@@ -92,7 +92,8 @@ async function analyzeRepository(repositoryUrl, options = {}) {
   ]);
   const workflows = workflowsResult.available ? workflowsResult.data.workflows || [] : [];
   const workflowPaths = paths.filter((path) => /^\.github\/workflows\/.*\.ya?ml$/i.test(path));
-  const hasWorkflows = workflows.length > 0 || workflowPaths.length > 0;
+  const hasWorkflows = workflowPaths.length > 0;
+  const activeWorkflowCount = workflows.filter((workflow) => workflow.state === 'active').length;
   const runs = runsResult.available ? runsResult.data.workflow_runs || [] : [];
   const latestRun = runs[0];
 
@@ -105,7 +106,15 @@ async function analyzeRepository(repositoryUrl, options = {}) {
     : check('coverage', 'Cobertura', 'warning', 'No se encontró cobertura publicada o configurada.', -10));
 
   if (!hasWorkflows) {
-    checks.push(check('ci', 'CI/CD · GitHub Actions', 'critical', 'No hay workflows activos o versionados.', -15));
+    checks.push(check(
+      'ci',
+      'CI/CD · GitHub Actions',
+      'critical',
+      activeWorkflowCount > 0
+        ? 'GitHub conserva workflows registrados, pero no están versionados en la rama principal.'
+        : 'No hay workflows versionados en la rama principal.',
+      -15,
+    ));
   } else if (!latestRun) {
     checks.push(check('ci', 'CI/CD · GitHub Actions', 'warning', 'Hay workflows, pero no se encontraron ejecuciones recientes.', -10));
   } else if (latestRun.status !== 'completed') {
