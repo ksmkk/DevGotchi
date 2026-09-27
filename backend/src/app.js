@@ -7,8 +7,10 @@ const projectsRoutes = require('./routes/projects.routes');
 const { typeDefs } = require('./graphql/schema');
 const { resolvers } = require('./graphql/resolvers');
 const { pool, dbType } = require('../db/database');
+const { startHealthDecayCron } = require('./services/cronService');
 
 const app = express();
+let healthDecayTask;
 
 // Middleware
 app.use(cors());
@@ -99,6 +101,10 @@ async function startApolloServer() {
 
   // Iniciar el servidor
   await server.start();
+
+  if (!healthDecayTask) {
+    healthDecayTask = startHealthDecayCron(pool);
+  }
 
   // Integrar con Express en el endpoint /graphql
   server.applyMiddleware({
