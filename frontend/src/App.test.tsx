@@ -10,7 +10,7 @@ import {
 } from "../../src/graphql/queries";
 
 const devgotchi = {
-  __typename: "DevGotchi",
+  __typename: "Devgotchi",
   id: "1",
   nombre: "Pixel",
   vida_actual: 72,

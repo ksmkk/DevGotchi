@@ -29,7 +29,7 @@ export type HealthResponse = {
 };
 
 export type DevGotchiApiData = {
-  __typename?: "DevGotchi";
+  __typename?: "Devgotchi";
   id: string;
   nombre: string;
   vida_actual: number;

@@ -19,7 +19,6 @@ app.use(express.json({
 }));
 const githubAuthRoutes = require('./routes/githubAuth.routes');
 const githubWebhookRoutes = require('./routes/githubWebhook.routes');
-const { executeGraphQL } = require('./graphql/schema');
 const { FRONTEND_URL } = require('./config/env');
 
 
@@ -39,17 +38,6 @@ app.use('/api/auth', githubAuthRoutes);
 app.use('/api/github/webhook', githubWebhookRoutes);
 
 
-
-app.post('/graphql', async (req, res) => {
-  const { query, variables } = req.body || {};
-
-  if (!query) {
-    return res.status(400).json({ errors: [{ message: 'Falta la consulta GraphQL' }] });
-  }
-
-  const result = await executeGraphQL(query, variables);
-  return res.status(result.errors ? 400 : 200).json(result);
-});
 
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -116,6 +104,7 @@ async function startApolloServer() {
   server.applyMiddleware({
     app,
     path: '/graphql',
+    bodyParserConfig: false,
     cors: {
       origin: '*',
       credentials: true,

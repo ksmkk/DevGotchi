@@ -88,7 +88,7 @@ function App() {
       optimisticResponse: {
         cuidarDevgotchi: {
           ...devgotchi,
-          __typename: "DevGotchi",
+          __typename: "Devgotchi",
           vida_actual: Math.min(100, devgotchi.vida_actual + 10),
         },
       },
