@@ -16,6 +16,18 @@ const { randomUUID } = require('crypto');
  */
 
 const resolvers = {
+  Devgotchi: {
+    salud: (devgotchi) => {
+      const puntosVida = devgotchi.vida_actual ?? devgotchi.devgotchiHealth;
+      const animo = devgotchi.devgotchiMood;
+
+      return {
+        puntosVida,
+        ultimoCommit: devgotchi.lastCommitDate ?? null,
+        estado: puntosVida <= 0 ? 'Muerto' : animo === 'sad' ? 'Triste' : 'Feliz',
+      };
+    },
+  },
   // =====================
   // QUERIES - Lectura de datos
   // =====================
