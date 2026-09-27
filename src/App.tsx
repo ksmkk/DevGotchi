@@ -1,16 +1,21 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { useState, type FormEvent } from "react";
 import { DevGotchiView } from "./components/DevGotchiView";
+import { RepositoryReport } from "./components/RepositoryReport";
 import {
-  CARE_FOR_DEVGOTCHI,
+  ANALYZE_REPOSITORY,
   CONNECT_REPOSITORY,
   GET_DEVGOTCHI,
+  RENAME_DEVGOTCHI,
 } from "./graphql/queries";
 import type {
-  CareForDevGotchiMutation,
+  AnalyzeRepositoryMutation,
+  AnalyzeRepositoryMutationVariables,
   ConnectRepositoryMutation,
   ConnectRepositoryMutationVariables,
   GetDevGotchiQuery,
+  RenameDevGotchiMutation,
+  RenameDevGotchiMutationVariables,
 } from "../frontend/src/__generated__/graphql";
 
 const githubRepositoryPattern = /^https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/?$/i;
@@ -67,19 +72,35 @@ function App() {
   const { data, error, loading, refetch } = useQuery<GetDevGotchiQuery>(
     GET_DEVGOTCHI,
   );
-  const [careForDevGotchi, careState] = useMutation<CareForDevGotchiMutation>(
-    CARE_FOR_DEVGOTCHI,
+  const [analyzeRepository, analysisState] = useMutation<
+    AnalyzeRepositoryMutation,
+    AnalyzeRepositoryMutationVariables
+  >(
+    ANALYZE_REPOSITORY,
     {
       update(cache, result) {
-        if (result.data?.cuidarDevgotchi) {
+        if (result.data?.analizarRepositorio) {
           cache.writeQuery({
             query: GET_DEVGOTCHI,
-            data: { devgotchi: result.data.cuidarDevgotchi },
+            data: { devgotchi: result.data.analizarRepositorio },
           });
         }
       },
     },
   );
+  const [renameDevGotchi, renameState] = useMutation<
+    RenameDevGotchiMutation,
+    RenameDevGotchiMutationVariables
+  >(RENAME_DEVGOTCHI, {
+    update(cache, result) {
+      if (result.data?.renombrarDevgotchi) {
+        cache.writeQuery({
+          query: GET_DEVGOTCHI,
+          data: { devgotchi: result.data.renombrarDevgotchi },
+        });
+      }
+    },
+  });
   const [connectRepository, connectState] = useMutation<
     ConnectRepositoryMutation,
     ConnectRepositoryMutationVariables
@@ -162,18 +183,11 @@ function App() {
   const devgotchi = data.devgotchi;
 
   async function handleCare() {
-    await careForDevGotchi({
-      optimisticResponse: {
-        cuidarDevgotchi: {
-          ...devgotchi,
-          vida_actual: Math.min(100, devgotchi.vida_actual + 10),
-          salud: {
-            ...devgotchi.salud,
-            puntosVida: Math.min(100, devgotchi.vida_actual + 10),
-          },
-        },
-      },
-    });
+    await analyzeRepository({ variables: { projectId: devgotchi.id } });
+  }
+
+  async function handleRename(name: string) {
+    await renameDevGotchi({ variables: { projectId: devgotchi.id, nombre: name } });
   }
 
   return (
@@ -190,9 +204,12 @@ function App() {
         <div className="dashboard__grid">
           <DevGotchiView
             devgotchi={devgotchi}
-            careError={careState.error?.message}
-            careLoading={careState.loading}
+            careError={analysisState.error?.message}
+            careLoading={analysisState.loading}
             onCare={() => void handleCare()}
+            onRename={(name) => handleRename(name)}
+            renameError={renameState.error?.message}
+            renameLoading={renameState.loading}
           />
 
           <aside className="dashboard__sidebar">
@@ -241,6 +258,13 @@ function App() {
                 <li><span className="state-dot state-dot--critical" /><strong>Crítico</strong><small>0–49 de vida</small></li>
               </ul>
             </section>
+
+            <RepositoryReport
+              diagnosis={devgotchi.diagnostico}
+              error={analysisState.error?.message}
+              loading={analysisState.loading}
+              onRefresh={() => handleCare()}
+            />
 
             {showTechnicalOptions ? (
               <details className="panel technical-options">

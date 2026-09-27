@@ -36,6 +36,7 @@ export type Devgotchi = {
   __typename?: 'Devgotchi';
   devgotchiHealth: Scalars['Int']['output'];
   devgotchiMood: Scalars['String']['output'];
+  diagnostico?: Maybe<DiagnosticoRepositorio>;
   id: Scalars['ID']['output'];
   name: Scalars['String']['output'];
   nombre: Scalars['String']['output'];
@@ -46,6 +47,15 @@ export type Devgotchi = {
   userId: Scalars['ID']['output'];
   uuid: Scalars['String']['output'];
   vida_actual: Scalars['Int']['output'];
+};
+
+export type DiagnosticoRepositorio = {
+  __typename?: 'DiagnosticoRepositorio';
+  analyzedAt: Scalars['String']['output'];
+  checks: Array<VerificacionRepositorio>;
+  recommendations: Array<Scalars['String']['output']>;
+  score: Scalars['Int']['output'];
+  summary: Scalars['String']['output'];
 };
 
 /** Tipo HealthRecord: Registro histórico de salud del DevGotchi */
@@ -62,6 +72,8 @@ export type HealthRecord = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  /** Vuelve a consultar GitHub y sincroniza la vida con la salud técnica. */
+  analizarRepositorio?: Maybe<Devgotchi>;
   /** Conecta un repositorio y crea o actualiza su DevGotchi. */
   conectarRepositorio?: Maybe<Devgotchi>;
   /** Registrar una actividad en un proyecto */
@@ -80,6 +92,8 @@ export type Mutation = {
   deleteUser?: Maybe<Scalars['Boolean']['output']>;
   /** Reduce 10 puntos de vida del DevGotchi */
   disminuirVida?: Maybe<Project>;
+  /** Cambia únicamente el nombre de la mascota, no el repositorio. */
+  renombrarDevgotchi?: Maybe<Devgotchi>;
   /** Activar/desactivar un webhook */
   toggleWebhook?: Maybe<Webhook>;
   /** Actualizar la salud del DevGotchi */
@@ -88,6 +102,11 @@ export type Mutation = {
   updateProject?: Maybe<Project>;
   /** Actualizar un usuario */
   updateUser?: Maybe<User>;
+};
+
+
+export type MutationAnalizarRepositorioArgs = {
+  projectId: Scalars['ID']['input'];
 };
 
 
@@ -145,6 +164,12 @@ export type MutationDeleteUserArgs = {
 
 
 export type MutationDisminuirVidaArgs = {
+  projectId: Scalars['ID']['input'];
+};
+
+
+export type MutationRenombrarDevgotchiArgs = {
+  nombre: Scalars['String']['input'];
   projectId: Scalars['ID']['input'];
 };
 
@@ -276,6 +301,15 @@ export type User = {
   uuid: Scalars['String']['output'];
 };
 
+export type VerificacionRepositorio = {
+  __typename?: 'VerificacionRepositorio';
+  detail: Scalars['String']['output'];
+  impact: Scalars['Int']['output'];
+  key: Scalars['String']['output'];
+  label: Scalars['String']['output'];
+  status: Scalars['String']['output'];
+};
+
 /** Tipo Webhook: Configuración de webhooks para un proyecto */
 export type Webhook = {
   __typename?: 'Webhook';
@@ -290,21 +324,36 @@ export type Webhook = {
   webhookUrl: Scalars['String']['output'];
 };
 
-export type DevGotchiFieldsFragment = { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string } };
+export type DevGotchiFieldsFragment = { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null };
 
 export type GetDevGotchiQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type GetDevGotchiQuery = { devgotchi: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string } } | null };
+export type GetDevGotchiQuery = { devgotchi: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null } | null };
 
 export type CareForDevGotchiMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CareForDevGotchiMutation = { cuidarDevgotchi: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string } } | null };
+export type CareForDevGotchiMutation = { cuidarDevgotchi: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null } | null };
 
 export type ConnectRepositoryMutationVariables = Exact<{
   repositoryUrl: string;
 }>;
 
 
-export type ConnectRepositoryMutation = { conectarRepositorio: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string } } | null };
+export type ConnectRepositoryMutation = { conectarRepositorio: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null } | null };
+
+export type RenameDevGotchiMutationVariables = Exact<{
+  projectId: string | number;
+  nombre: string;
+}>;
+
+
+export type RenameDevGotchiMutation = { renombrarDevgotchi: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null } | null };
+
+export type AnalyzeRepositoryMutationVariables = Exact<{
+  projectId: string | number;
+}>;
+
+
+export type AnalyzeRepositoryMutation = { analizarRepositorio: { id: string, nombre: string, vida_actual: number, repository_url: string | null, salud: { puntosVida: number, ultimoCommit: string | null, estado: string }, diagnostico: { score: number, summary: string, analyzedAt: string, recommendations: Array<string>, checks: Array<{ key: string, label: string, status: string, detail: string, impact: number }> } | null } | null };

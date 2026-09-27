@@ -102,6 +102,13 @@ query {
     repository_url
     devgotchiHealth
     devgotchiMood
+    diagnostico {
+      score
+      summary
+      analyzedAt
+      checks { key label status detail impact }
+      recommendations
+    }
   }
 }
 ```
@@ -122,6 +129,29 @@ mutation {
 La mutación persiste el repositorio en `projects.repository_url`. La URL se
 normaliza quitando espacios, el slash final y el sufijo `.git`; si el
 repositorio ya existe, devuelve el proyecto guardado sin crear un duplicado.
+
+### Mutaciones de mascota y diagnóstico
+
+```graphql
+mutation {
+  renombrarDevgotchi(projectId: "1", nombre: "Bartolo") { nombre }
+}
+
+mutation {
+  analizarRepositorio(projectId: "1") {
+    vida_actual
+    diagnostico { score summary }
+  }
+}
+```
+
+`renombrarDevgotchi` cambia `projects.pet_name` sin modificar el nombre ni la
+URL del repositorio. `analizarRepositorio` consulta señales públicas de GitHub
+(tests, cobertura, Actions, `.gitignore` y `.env`) y, cuando `GITHUB_TOKEN`
+tiene permisos, alertas de Secret Scanning y Code Scanning. Las verificaciones
+sin permisos se devuelven como `unknown` y no descuentan vida. Los buckets se
+mantienen como no verificables hasta integrar el proveedor cloud. El análisis
+se guarda y se vuelve a sincronizar cada hora.
 
 Los eventos `workflow_run` de GitHub Actions se normalizan usando `conclusion`,
 `head_branch`, `name` y `repository`. Si `GITHUB_WEBHOOK_SECRET` está configurado,

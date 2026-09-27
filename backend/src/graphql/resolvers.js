@@ -31,6 +31,53 @@ const getOrCreateRepositoryOwner = async (db) => {
   return concurrentlyCreatedUser.rows[0].id;
 };
 
+const ANALYSIS_CACHE_MS = 5 * 60 * 1000;
+
+function parseStoredAnalysis(value) {
+  if (!value) return null;
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = false) {
+  const storedAnalysis = parseStoredAnalysis(project.repository_analysis);
+  const analyzedAt = project.last_analysis_at ? new Date(project.last_analysis_at).getTime() : 0;
+  if (!repositoryAnalyzer || !project.repository_url) {
+    return { ...project, repositoryDiagnosis: storedAnalysis };
+  }
+  if (!force && storedAnalysis && Date.now() - analyzedAt < ANALYSIS_CACHE_MS) {
+    if (project.devgotchi_health !== storedAnalysis.score) {
+      const synchronized = await db.query(
+        `UPDATE projects SET devgotchi_health = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2 RETURNING *`,
+        [storedAnalysis.score, project.id],
+      );
+      return { ...synchronized.rows[0], repositoryDiagnosis: storedAnalysis };
+    }
+    return { ...project, repositoryDiagnosis: storedAnalysis };
+  }
+
+  try {
+    const diagnosis = await repositoryAnalyzer(project.repository_url);
+    const mood = diagnosis.score <= 0 ? 'dead' : diagnosis.score < 50 ? 'sad' : 'happy';
+    const result = await db.query(
+      `UPDATE projects
+       SET devgotchi_health = $1, devgotchi_mood = $2,
+           repository_analysis = $3, last_analysis_at = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`,
+      [diagnosis.score, mood, JSON.stringify(diagnosis), diagnosis.analyzedAt, project.id],
+    );
+    return { ...result.rows[0], repositoryDiagnosis: diagnosis };
+  } catch (error) {
+    console.error('Error analyzing repository:', error.message);
+    return { ...project, repositoryDiagnosis: storedAnalysis };
+  }
+}
+
 /**
  * RESOLVERS DE GRAPHQL - DevGotchi
  * 
@@ -63,9 +110,11 @@ const resolvers = {
   // QUERIES - Lectura de datos
   // =====================
   Query: {
-    devgotchi: async (_, __, { db }) => {
+    devgotchi: async (_, __, { db, repositoryAnalyzer }) => {
       const result = await db.query('SELECT * FROM projects ORDER BY created_at ASC LIMIT 1');
-      return result.rows.length === 0 ? null : formatProject(result.rows[0]);
+      if (result.rows.length === 0) return null;
+      const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer);
+      return formatProject(project);
     },
 
     /**
@@ -203,7 +252,7 @@ const resolvers = {
   // MUTATIONS - Modificación de datos
   // =====================
   Mutation: {
-    conectarRepositorio: async (_, { repositoryUrl }, { db }) => {
+    conectarRepositorio: async (_, { repositoryUrl }, { db, repositoryAnalyzer }) => {
       const normalizedRepositoryUrl = normalizeRepositoryUrl(repositoryUrl);
       const existing = await db.query(
         'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
@@ -211,7 +260,8 @@ const resolvers = {
       );
 
       if (existing.rows.length > 0) {
-        return formatProject(existing.rows[0]);
+        const project = await refreshRepositoryHealth(existing.rows[0], db, repositoryAnalyzer, true);
+        return formatProject(project);
       }
 
       const userId = await getOrCreateRepositoryOwner(db);
@@ -224,7 +274,34 @@ const resolvers = {
         [randomUUID(), userId, name, normalizedRepositoryUrl],
       );
 
+      const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer, true);
+      return formatProject(project);
+    },
+
+    renombrarDevgotchi: async (_, { projectId, nombre }, { db }) => {
+      const normalizedName = String(nombre || '').trim();
+      if (normalizedName.length < 1 || normalizedName.length > 40) {
+        throw new Error('El nombre debe tener entre 1 y 40 caracteres');
+      }
+      const result = await db.query(
+        `UPDATE projects SET pet_name = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2 RETURNING *`,
+        [normalizedName, projectId],
+      );
+      if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
       return formatProject(result.rows[0]);
+    },
+
+    analizarRepositorio: async (_, { projectId }, { db, repositoryAnalyzer }) => {
+      const result = await db.query('SELECT * FROM projects WHERE id = $1', [projectId]);
+      if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
+      const project = await refreshRepositoryHealth(
+        result.rows[0],
+        db,
+        repositoryAnalyzer,
+        true,
+      );
+      return formatProject(project);
     },
 
     /**
@@ -711,9 +788,10 @@ function formatProject(row) {
     lastCommitDate: formatDate(row.last_commit_date),
     createdAt: formatDate(row.created_at),
     updatedAt: formatDate(row.updated_at),
-    nombre: row.name,
+    nombre: row.pet_name || row.name,
     vida_actual: row.devgotchi_health,
     repository_url: row.repository_url,
+    diagnostico: row.repositoryDiagnosis || parseStoredAnalysis(row.repository_analysis),
   };
 }
 

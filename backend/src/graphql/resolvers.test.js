@@ -243,3 +243,66 @@ describe('Mutation.conectarRepositorio', () => {
     expect(db.query).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('nombre y diagnóstico del DevGotchi', () => {
+  test('renombra la mascota sin cambiar el nombre del proyecto', async () => {
+    const db = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{
+          id: 7,
+          uuid: 'project-uuid',
+          user_id: 2,
+          name: 'api-gateway',
+          pet_name: 'Byte',
+          devgotchi_health: 70,
+          devgotchi_mood: 'happy',
+        }],
+      }),
+    };
+
+    const result = await resolvers.Mutation.renombrarDevgotchi(
+      null,
+      { projectId: 7, nombre: ' Byte ' },
+      { db },
+    );
+
+    expect(result.nombre).toBe('Byte');
+    expect(result.name).toBe('api-gateway');
+    expect(db.query).toHaveBeenCalledWith(expect.stringContaining('pet_name = $1'), ['Byte', 7]);
+  });
+
+  test('sincroniza la vida con el puntaje técnico del repositorio', async () => {
+    const diagnosis = {
+      score: 45,
+      analyzedAt: '2026-09-27T01:00:00.000Z',
+      summary: 'Hay problemas críticos.',
+      checks: [],
+      recommendations: ['Agregar tests.'],
+    };
+    const project = {
+      id: 7,
+      uuid: 'project-uuid',
+      user_id: 2,
+      name: 'api-gateway',
+      repository_url: 'https://github.com/acme/api-gateway',
+      devgotchi_health: 100,
+      devgotchi_mood: 'neutral',
+    };
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [project] })
+        .mockResolvedValueOnce({ rows: [{ ...project, devgotchi_health: 45, devgotchi_mood: 'sad' }] }),
+    };
+    const repositoryAnalyzer = jest.fn().mockResolvedValue(diagnosis);
+
+    const result = await resolvers.Mutation.analizarRepositorio(
+      null,
+      { projectId: 7 },
+      { db, repositoryAnalyzer },
+    );
+
+    expect(result.vida_actual).toBe(45);
+    expect(result.diagnostico).toEqual(diagnosis);
+    expect(repositoryAnalyzer).toHaveBeenCalledWith(project.repository_url);
+  });
+});

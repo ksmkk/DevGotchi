@@ -10,7 +10,8 @@ const { pool, dbType } = require('../db/database');
 const githubAuthRoutes = require('./routes/githubAuth.routes');
 const githubWebhookRoutes = require('./routes/githubWebhook.routes');
 const { FRONTEND_URL } = require('./config/env');
-const { startHealthDecayCron } = require('./services/cronService');
+const { startRepositoryHealthCron } = require('./services/cronService');
+const { analyzeRepository } = require('./services/repositoryHealthService');
 
 const app = express();
 let healthDecayTask;
@@ -86,6 +87,7 @@ async function startApolloServer() {
     context: () => ({
       db: pool,
       dbType,
+      repositoryAnalyzer: analyzeRepository,
     }),
     // Configurar manejo de errores
     formatError: (error) => {
@@ -101,7 +103,7 @@ async function startApolloServer() {
   await server.start();
 
   if (!healthDecayTask) {
-    healthDecayTask = startHealthDecayCron(pool);
+    healthDecayTask = startRepositoryHealthCron(pool, analyzeRepository);
   }
 
   // Integrar con Express en el endpoint /graphql

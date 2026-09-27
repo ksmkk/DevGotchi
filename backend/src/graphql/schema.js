@@ -67,6 +67,23 @@ const typeDefs = gql`
     devgotchiHealth: Int!
     devgotchiMood: String!
     status: String
+    diagnostico: DiagnosticoRepositorio
+  }
+
+  type VerificacionRepositorio {
+    key: String!
+    label: String!
+    status: String!
+    detail: String!
+    impact: Int!
+  }
+
+  type DiagnosticoRepositorio {
+    score: Int!
+    summary: String!
+    analyzedAt: String!
+    checks: [VerificacionRepositorio!]!
+    recommendations: [String!]!
   }
 
   """Estado actual de salud del repositorio conectado."""
@@ -178,6 +195,12 @@ const typeDefs = gql`
   type Mutation {
     """Conecta un repositorio y crea o actualiza su DevGotchi."""
     conectarRepositorio(repositoryUrl: String!): Devgotchi
+
+    """Cambia únicamente el nombre de la mascota, no el repositorio."""
+    renombrarDevgotchi(projectId: ID!, nombre: String!): Devgotchi
+
+    """Vuelve a consultar GitHub y sincroniza la vida con la salud técnica."""
+    analizarRepositorio(projectId: ID!): Devgotchi
 
     """
     Crear un nuevo usuario

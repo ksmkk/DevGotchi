@@ -11,6 +11,7 @@ const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID || '';
 const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET || '';
 const GITHUB_CALLBACK_URL = process.env.GITHUB_CALLBACK_URL || '';
 const GITHUB_WEBHOOK_SECRET = process.env.GITHUB_WEBHOOK_SECRET || '';
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || '';
 const SESSION_SECRET = process.env.SESSION_SECRET || '';
 
 module.exports = {
@@ -21,6 +22,7 @@ module.exports = {
   GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET,
   GITHUB_WEBHOOK_SECRET,
+  GITHUB_TOKEN,
   PORT,
   POSTGRES_DB,
   POSTGRES_PASSWORD,
