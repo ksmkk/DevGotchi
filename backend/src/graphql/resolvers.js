@@ -74,8 +74,44 @@ async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = 
     return { ...result.rows[0], repositoryDiagnosis: diagnosis };
   } catch (error) {
     console.error('Error analyzing repository:', error.message);
-    return { ...project, repositoryDiagnosis: storedAnalysis };
+    const hasVerifiedAnalysis = storedAnalysis
+      && !storedAnalysis.checks?.some((item) => item.key === 'github-access');
+    const diagnosis = {
+      score: hasVerifiedAnalysis ? storedAnalysis.score : 50,
+      analyzedAt: new Date().toISOString(),
+      summary: 'GitHub requiere acceso para analizar este repositorio.',
+      checks: [{
+        key: 'github-access',
+        label: 'Acceso al repositorio',
+        status: 'unknown',
+        detail: 'El repositorio es privado o no está disponible. Configura GITHUB_TOKEN u OAuth con acceso de lectura.',
+        impact: 0,
+      }],
+      recommendations: [
+        'Conecta GitHub con permisos de lectura para habilitar tests, CI/CD y alertas de seguridad.',
+      ],
+    };
+    const result = await db.query(
+      `UPDATE projects
+       SET devgotchi_health = $1, devgotchi_mood = 'neutral',
+           repository_analysis = $2, last_analysis_at = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [diagnosis.score, JSON.stringify(diagnosis), diagnosis.analyzedAt, project.id],
+    );
+    return { ...(result.rows[0] || project), repositoryDiagnosis: diagnosis };
   }
+}
+
+async function markCurrentProject(db, project) {
+  const result = await db.query(
+    `UPDATE projects
+     SET is_current = CASE WHEN id = $1 THEN true ELSE false END,
+         updated_at = CASE WHEN id = $1 THEN CURRENT_TIMESTAMP ELSE updated_at END
+     RETURNING *`,
+    [project.id],
+  );
+  return result?.rows?.find((row) => String(row.id) === String(project.id)) || project;
 }
 
 /**
@@ -111,7 +147,11 @@ const resolvers = {
   // =====================
   Query: {
     devgotchi: async (_, __, { db, repositoryAnalyzer }) => {
-      const result = await db.query('SELECT * FROM projects ORDER BY created_at ASC LIMIT 1');
+      const result = await db.query(
+        `SELECT * FROM projects
+         ORDER BY CASE WHEN is_current THEN 0 ELSE 1 END, updated_at DESC, id DESC
+         LIMIT 1`,
+      );
       if (result.rows.length === 0) return null;
       const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer);
       return formatProject(project);
@@ -260,7 +300,8 @@ const resolvers = {
       );
 
       if (existing.rows.length > 0) {
-        const project = await refreshRepositoryHealth(existing.rows[0], db, repositoryAnalyzer, true);
+        const selectedProject = await markCurrentProject(db, existing.rows[0]);
+        const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
         return formatProject(project);
       }
 
@@ -274,7 +315,8 @@ const resolvers = {
         [randomUUID(), userId, name, normalizedRepositoryUrl],
       );
 
-      const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer, true);
+      const selectedProject = await markCurrentProject(db, result.rows[0]);
+      const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
       return formatProject(project);
     },
 

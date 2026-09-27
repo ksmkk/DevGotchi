@@ -129,6 +129,9 @@ mutation {
 La mutación persiste el repositorio en `projects.repository_url`. La URL se
 normaliza quitando espacios, el slash final y el sufijo `.git`; si el
 repositorio ya existe, devuelve el proyecto guardado sin crear un duplicado.
+La conexión también marca ese proyecto como el DevGotchi actual; por eso al
+conectar o reconectar otra URL el panel cambia de repositorio y conserva la
+selección después de recargar.
 
 ### Mutaciones de mascota y diagnóstico
 
@@ -152,6 +155,11 @@ tiene permisos, alertas de Secret Scanning y Code Scanning. Las verificaciones
 sin permisos se devuelven como `unknown` y no descuentan vida. Los buckets se
 mantienen como no verificables hasta integrar el proveedor cloud. El análisis
 se guarda y se vuelve a sincronizar cada hora.
+
+Si GitHub no permite leer el repositorio (por ejemplo, porque es privado y no
+hay token), el diagnóstico queda en estado no verificable, usa una vida neutral
+de 50 puntos y recomienda configurar `GITHUB_TOKEN` u OAuth. No se interpreta
+un error de acceso como repositorio saludable ni como una falla de sus tests.
 
 Los eventos `workflow_run` de GitHub Actions se normalizan usando `conclusion`,
 `head_branch`, `name` y `repository`. Si `GITHUB_WEBHOOK_SECRET` está configurado,

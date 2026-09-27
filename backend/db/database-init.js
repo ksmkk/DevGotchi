@@ -55,11 +55,13 @@ const initializeDatabase = async () => {
         ['pet_name', 'TEXT'],
         ['repository_analysis', 'TEXT'],
         ['last_analysis_at', 'TIMESTAMP'],
+        ['is_current', 'INTEGER DEFAULT 0'],
       ]
       : [
         ['pet_name', 'VARCHAR(80)'],
         ['repository_analysis', 'TEXT'],
         ['last_analysis_at', 'TIMESTAMP'],
+        ['is_current', 'BOOLEAN DEFAULT FALSE'],
       ];
 
     for (const [column, type] of projectColumns) {

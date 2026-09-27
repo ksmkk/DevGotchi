@@ -231,7 +231,11 @@ describe('Mutation.conectarRepositorio', () => {
       devgotchi_health: 100,
       devgotchi_mood: 'neutral',
     };
-    const db = { query: jest.fn().mockResolvedValueOnce({ rows: [existingProject] }) };
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [existingProject] })
+        .mockResolvedValueOnce({ rows: [{ ...existingProject, is_current: true }] }),
+    };
 
     const result = await resolvers.Mutation.conectarRepositorio(
       null,
@@ -240,7 +244,8 @@ describe('Mutation.conectarRepositorio', () => {
     );
 
     expect(result.repositoryUrl).toBe('https://github.com/acme/api-gateway');
-    expect(db.query).toHaveBeenCalledTimes(1);
+    expect(db.query).toHaveBeenCalledTimes(2);
+    expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('is_current'), [8]);
   });
 });
 
@@ -304,5 +309,41 @@ describe('nombre y diagnóstico del DevGotchi', () => {
     expect(result.vida_actual).toBe(45);
     expect(result.diagnostico).toEqual(diagnosis);
     expect(repositoryAnalyzer).toHaveBeenCalledWith(project.repository_url);
+  });
+
+  test('explica cuando un repositorio privado necesita acceso de GitHub', async () => {
+    const project = {
+      id: 9,
+      uuid: 'private-project',
+      user_id: 2,
+      name: 'private-app',
+      repository_url: 'https://github.com/acme/private-app',
+      devgotchi_health: 100,
+      devgotchi_mood: 'neutral',
+    };
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [project] })
+        .mockResolvedValueOnce({ rows: [project] }),
+    };
+    const repositoryAnalyzer = jest.fn().mockRejectedValue(new Error('GitHub respondió 404'));
+
+    const result = await resolvers.Mutation.analizarRepositorio(
+      null,
+      { projectId: 9 },
+      { db, repositoryAnalyzer },
+    );
+
+    expect(result.diagnostico.summary).toContain('requiere acceso');
+    expect(result.diagnostico.score).toBe(50);
+    expect(result.diagnostico.checks[0]).toMatchObject({
+      key: 'github-access',
+      status: 'unknown',
+    });
+    expect(db.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('repository_analysis'),
+      expect.arrayContaining([50, expect.stringContaining('GITHUB_TOKEN'), 9]),
+    );
   });
 });

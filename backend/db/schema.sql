@@ -27,6 +27,7 @@ CREATE TABLE IF NOT EXISTS projects (
   pet_name VARCHAR(80),
   repository_analysis TEXT,
   last_analysis_at TIMESTAMP,
+  is_current BOOLEAN DEFAULT FALSE,
   status VARCHAR(50) DEFAULT 'active', -- active, archived, deleted
   devgotchi_health INTEGER DEFAULT 100, -- salud del devgotchi (0-100)
   devgotchi_mood VARCHAR(50) DEFAULT 'neutral', -- happy, sad, neutral, angry

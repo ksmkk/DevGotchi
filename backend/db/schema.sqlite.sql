@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS projects (
   pet_name TEXT,
   repository_analysis TEXT,
   last_analysis_at TIMESTAMP,
+  is_current INTEGER DEFAULT 0,
   status TEXT DEFAULT 'active',
   devgotchi_health INTEGER DEFAULT 100,
   devgotchi_mood TEXT DEFAULT 'neutral',
