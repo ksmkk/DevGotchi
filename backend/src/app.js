@@ -7,22 +7,16 @@ const projectsRoutes = require('./routes/projects.routes');
 const { typeDefs } = require('./graphql/schema');
 const { resolvers } = require('./graphql/resolvers');
 const { pool, dbType } = require('../db/database');
-const { startHealthDecayCron } = require('./services/cronService');
+const githubAuthRoutes = require('./routes/githubAuth.routes');
+const githubWebhookRoutes = require('./routes/githubWebhook.routes');
+const { FRONTEND_URL } = require('./config/env');
+const { startRepositoryHealthCron } = require('./services/cronService');
+const { analyzeRepository } = require('./services/repositoryHealthService');
 
 const app = express();
 let healthDecayTask;
 
-// Middleware
 app.use(cors());
-app.use(express.json({
-  verify: (req, res, buffer) => {
-    req.rawBody = buffer;
-  },
-}));
-const githubAuthRoutes = require('./routes/githubAuth.routes');
-const githubWebhookRoutes = require('./routes/githubWebhook.routes');
-const { FRONTEND_URL } = require('./config/env');
-
 
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', FRONTEND_URL || 'http://127.0.0.1:5173');
@@ -36,10 +30,15 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use('/api/auth', githubAuthRoutes);
+// GitHub requires the exact raw body to validate X-Hub-Signature-256.
+// This route must be registered before express.json consumes the request body.
 app.use('/api/github/webhook', githubWebhookRoutes);
-
-
+app.use(express.json({
+  verify: (req, res, buffer) => {
+    req.rawBody = buffer;
+  },
+}));
+app.use('/api/auth', githubAuthRoutes);
 
 app.get('/', (req, res) => {
   res.status(200).json({
@@ -88,6 +87,7 @@ async function startApolloServer() {
     context: () => ({
       db: pool,
       dbType,
+      repositoryAnalyzer: analyzeRepository,
     }),
     // Configurar manejo de errores
     formatError: (error) => {
@@ -103,7 +103,7 @@ async function startApolloServer() {
   await server.start();
 
   if (!healthDecayTask) {
-    healthDecayTask = startHealthDecayCron(pool);
+    healthDecayTask = startRepositoryHealthCron(pool, analyzeRepository);
   }
 
   // Integrar con Express en el endpoint /graphql
@@ -129,5 +129,6 @@ app.use((error, req, res, next) => {
   });
 });
 
-module.exports = { app, startApolloServer };
+module.exports = app;
+module.exports.startApolloServer = startApolloServer;
 

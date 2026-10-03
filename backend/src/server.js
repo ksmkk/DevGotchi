@@ -1,4 +1,5 @@
-const { app, startApolloServer } = require('./app');
+const app = require('./app');
+const { startApolloServer } = app;
 const { PORT } = require('./config/env');
 const { initializeDatabase } = require('../db/database-init');
 

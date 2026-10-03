@@ -4,9 +4,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../../src/App";
 import { DevGotchiView } from "../../src/components/DevGotchiView";
 import {
-  CARE_FOR_DEVGOTCHI,
+  ANALYZE_REPOSITORY,
   CONNECT_REPOSITORY,
   GET_DEVGOTCHI,
+  RENAME_DEVGOTCHI,
 } from "../../src/graphql/queries";
 
 const devgotchi = {
@@ -20,6 +21,7 @@ const devgotchi = {
     ultimoCommit: null,
     estado: "Feliz",
   },
+  diagnostico: null,
 } as const;
 
 const queryMock = {
@@ -47,21 +49,21 @@ describe("vista interactiva de DevGotchi", () => {
     })).toBeVisible();
   });
 
-  it("cuida la mascota y actualiza la vida sin recargar", async () => {
-    const careMock = {
-      request: { query: CARE_FOR_DEVGOTCHI },
+  it("analiza el repositorio y actualiza la vida sin recargar", async () => {
+    const analysisMock = {
+      request: { query: ANALYZE_REPOSITORY, variables: { projectId: "1" } },
       result: {
-        data: { cuidarDevgotchi: { ...devgotchi, vida_actual: 82 } },
+        data: { analizarRepositorio: { ...devgotchi, vida_actual: 82 } },
       },
     };
 
     render(
-      <MockedProvider mocks={[queryMock, careMock]}>
+      <MockedProvider mocks={[queryMock, analysisMock]}>
         <App />
       </MockedProvider>,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: /Cuidar \+10/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /Revisar salud/i }));
     expect(await screen.findByText("82/100")).toBeVisible();
     expect(screen.getByRole("progressbar", { name: "Vida de Pixel: 82 de 100" }))
       .toHaveAttribute("value", "82");
@@ -135,6 +137,66 @@ describe("vista interactiva de DevGotchi", () => {
       .toHaveAttribute("href", repositoryUrl);
   });
 
+  it("permite cambiar el nombre de la mascota sin renombrar el repositorio", async () => {
+    const renameMock = {
+      request: {
+        query: RENAME_DEVGOTCHI,
+        variables: { projectId: "1", nombre: "Byte" },
+      },
+      result: { data: { renombrarDevgotchi: { ...devgotchi, nombre: "Byte" } } },
+    };
+
+    render(
+      <MockedProvider mocks={[queryMock, renameMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    const input = await screen.findByLabelText("Nombre de la mascota");
+    fireEvent.change(input, { target: { value: "Byte" } });
+    fireEvent.click(screen.getByRole("button", { name: "Cambiar" }));
+
+    expect(await screen.findByRole("heading", { name: "Byte" })).toBeVisible();
+  });
+
+  it("muestra el formulario y crea el DevGotchi cuando la base está vacía", async () => {
+    const repositoryUrl = "https://github.com/devgotchi/app";
+    const emptyQueryMock = {
+      request: { query: GET_DEVGOTCHI },
+      result: { data: { devgotchi: null } },
+    };
+    const connectMock = {
+      request: {
+        query: CONNECT_REPOSITORY,
+        variables: { repositoryUrl },
+      },
+      result: {
+        data: {
+          conectarRepositorio: { ...devgotchi, repository_url: repositoryUrl },
+        },
+      },
+    };
+
+    render(
+      <MockedProvider mocks={[emptyQueryMock, connectMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("heading", { name: "Conecta tu primer repositorio" }))
+      .toBeVisible();
+    expect(screen.queryByText("No se encontró DevGotchi")).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText("URL del repositorio de GitHub"), {
+      target: { value: repositoryUrl },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Conectar" }));
+
+    expect(await screen.findByRole("heading", { name: "Pixel" })).toBeVisible();
+    expect(screen.getByRole("link", { name: "devgotchi/app" }))
+      .toHaveAttribute("href", repositoryUrl);
+  });
+
   it("rechaza URLs que no pertenecen a un repositorio de GitHub", async () => {
     render(
       <MockedProvider mocks={[queryMock]}>
@@ -162,6 +224,23 @@ describe("vista interactiva de DevGotchi", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Backend no disponible");
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeEnabled();
   });
+
+  it("traduce el error de red y explica cómo levantar la demo", async () => {
+    render(
+      <MockedProvider mocks={[{
+        request: { query: GET_DEVGOTCHI },
+        error: new TypeError("Failed to fetch"),
+      }]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "El backend no está disponible",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("npm run demo");
+    expect(screen.queryByText("Failed to fetch")).not.toBeInTheDocument();
+  });
 });
 
 describe("estados visuales de la mascota", () => {
@@ -175,6 +254,8 @@ describe("estados visuales de la mascota", () => {
         devgotchi={{ ...devgotchi, vida_actual: life }}
         careLoading={false}
         onCare={() => undefined}
+        onRename={() => undefined}
+        renameLoading={false}
       />,
     );
 

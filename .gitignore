@@ -1,5 +1,8 @@
 node_modules/
 /package-lock.json
+devgotchi.db
+devgotchi.db-shm
+devgotchi.db-wal
 
 dist/
 build/

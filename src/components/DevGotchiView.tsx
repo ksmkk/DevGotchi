@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import type { DevGotchiApiData, HealthStatus } from "../types/devgotchi";
 import { HealthIndicator } from "./HealthIndicator";
 
@@ -7,6 +7,9 @@ type DevGotchiViewProps = {
   careError?: string;
   careLoading: boolean;
   onCare: () => Promise<void> | void;
+  onRename: (name: string) => Promise<void> | void;
+  renameError?: string;
+  renameLoading: boolean;
 };
 
 type PetActivity = "idle" | "feeding" | "playing" | "caring";
@@ -24,6 +27,9 @@ export function DevGotchiView({
   careError,
   careLoading,
   onCare,
+  onRename,
+  renameError,
+  renameLoading,
 }: DevGotchiViewProps) {
   const life = clampLife(devgotchi.vida_actual);
   const health = getHealthStatus(life);
@@ -31,6 +37,7 @@ export function DevGotchiView({
   const [interactionMessage, setInteractionMessage] = useState(
     `${devgotchi.nombre} te está esperando.`,
   );
+  const [petName, setPetName] = useState(devgotchi.nombre);
 
   function interact(nextActivity: PetActivity, message: string) {
     setActivity(nextActivity);
@@ -38,12 +45,20 @@ export function DevGotchiView({
   }
 
   async function care() {
-    interact("caring", `Estás cuidando a ${devgotchi.nombre}. ¡Se siente mucho mejor!`);
+    interact("caring", `Revisando la salud técnica de ${devgotchi.nombre}…`);
     try {
       await onCare();
     } catch {
-      setInteractionMessage(`No pudimos cuidar a ${devgotchi.nombre}. Inténtalo otra vez.`);
+      setInteractionMessage(`No pudimos analizar a ${devgotchi.nombre}. Inténtalo otra vez.`);
     }
+  }
+
+  async function rename(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const normalizedName = petName.trim();
+    if (!normalizedName || normalizedName === devgotchi.nombre) return;
+    await onRename(normalizedName);
+    setInteractionMessage(`¡Hola! Ahora me llamo ${normalizedName}.`);
   }
 
   return (
@@ -52,6 +67,20 @@ export function DevGotchiView({
         <div>
           <p className="devgotchi-card__eyebrow">Tu mascota digital</p>
           <h2>{devgotchi.nombre}</h2>
+          <form className="pet-name-form" onSubmit={(event) => void rename(event)}>
+            <label htmlFor="pet-name">Nombre de la mascota</label>
+            <div>
+              <input
+                id="pet-name"
+                value={petName}
+                maxLength={40}
+                onChange={(event) => setPetName(event.target.value)}
+              />
+              <button type="submit" disabled={renameLoading || !petName.trim()}>
+                {renameLoading ? "Guardando…" : "Cambiar"}
+              </button>
+            </div>
+          </form>
         </div>
         <span className="health-chip">Nivel {life}</span>
       </header>
@@ -109,17 +138,16 @@ export function DevGotchiView({
             type="button"
             className="pet-control pet-control--care"
             onClick={() => void care()}
-            disabled={careLoading || life === 100}
+            disabled={careLoading}
           >
             <span className="pet-control__icon" aria-hidden="true">♥</span>
-            <strong>
-              {careLoading ? "Cuidando…" : life === 100 ? "Vida completa" : "Cuidar +10"}
-            </strong>
-            <small>Recupera vida</small>
+            <strong>{careLoading ? "Analizando…" : "Revisar salud"}</strong>
+            <small>Sincroniza con GitHub</small>
           </button>
         </div>
       </section>
       {careError ? <p className="action-error" role="alert">{careError}</p> : null}
+      {renameError ? <p className="action-error" role="alert">{renameError}</p> : null}
     </article>
   );
 }

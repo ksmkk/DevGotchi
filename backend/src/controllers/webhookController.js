@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { randomUUID } = require('crypto');
 const { evaluateProjectHealth } = require('../services/devgotchiService');
 const { setProjectStatus } = require('../store/projectStore');
 const { pool } = require('../../db/database');
@@ -47,9 +48,9 @@ async function handleProjectWebhook(req, res) {
       [result.vida, mood, projectId],
     );
     await pool.query(
-      `INSERT INTO health_history (project_id, health_value, mood)
-       VALUES ($1, $2, $3)`,
-      [projectId, result.vida, mood],
+      `INSERT INTO health_history (uuid, project_id, health_value, mood)
+       VALUES ($1, $2, $3, $4)`,
+      [randomUUID(), projectId, result.vida, mood],
     );
   }
 

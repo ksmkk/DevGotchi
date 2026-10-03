@@ -2,37 +2,36 @@ const { ApolloServer } = require('apollo-server-express');
 const { typeDefs } = require('./schema');
 const { resolvers } = require('./resolvers');
 
-const mockQuery = jest.fn();
-const server = new ApolloServer({
-  typeDefs,
-  resolvers,
-  context: () => ({ db: { query: mockQuery } }),
-});
+async function executeGraphQL(query, variables, db) {
+  const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    context: () => ({ db }),
+  });
 
-async function executeGraphQL(query, variables) {
-  const response = await server.executeOperation({ query, variables });
-  return response.body?.singleResult ?? response;
+  await server.start();
+  const result = await server.executeOperation({ query, variables });
+  await server.stop();
+  return result;
 }
 
-describe('resolvers GraphQL de DevGotchi', () => {
-  beforeAll(() => server.start());
-  afterAll(() => server.stop());
-  beforeEach(() => mockQuery.mockReset());
-
+describe('operaciones GraphQL de DevGotchi', () => {
   test.each([
     { puntosVida: 40, animo: 'sad', estado: 'Triste' },
     { puntosVida: 0, animo: 'sad', estado: 'Muerto' },
     { puntosVida: 78, animo: 'happy', estado: 'Feliz' },
   ])('devgotchi devuelve la salud del repositorio en estado $estado', async ({ puntosVida, animo, estado }) => {
-    mockQuery.mockResolvedValueOnce({
-      rows: [{
-        id: 1,
-        user_id: 2,
-        devgotchi_health: puntosVida,
-        devgotchi_mood: animo,
-        last_commit_date: '2025-03-08T12:00:00.000Z',
-      }],
-    });
+    const db = {
+      query: jest.fn().mockResolvedValueOnce({
+        rows: [{
+          id: 1,
+          user_id: 2,
+          devgotchi_health: puntosVida,
+          devgotchi_mood: animo,
+          last_commit_date: '2025-03-08T12:00:00.000Z',
+        }],
+      }),
+    };
 
     const result = await executeGraphQL(`
       query {
@@ -44,7 +43,7 @@ describe('resolvers GraphQL de DevGotchi', () => {
           }
         }
       }
-    `);
+    `, undefined, db);
 
     expect(result.errors).toBeUndefined();
     expect(result.data.devgotchi.salud).toEqual({
@@ -55,20 +54,21 @@ describe('resolvers GraphQL de DevGotchi', () => {
   });
 
   test('cuidarDevgotchi incrementa la vida y respeta el máximo', async () => {
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ id: 1, devgotchi_health: 95 }],
-      })
-      .mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          user_id: 2,
-          name: 'Pixel',
-          devgotchi_health: 100,
-          devgotchi_mood: 'happy',
-          repository_url: null,
-        }],
-      });
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [{ id: 1, devgotchi_health: 95 }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 1,
+            uuid: 'project-uuid',
+            user_id: 1,
+            name: 'Pixel',
+            devgotchi_health: 100,
+            devgotchi_mood: 'happy',
+          }],
+        })
+        .mockResolvedValueOnce({ rows: [] }),
+    };
 
     const result = await executeGraphQL(`
       mutation {
@@ -77,31 +77,30 @@ describe('resolvers GraphQL de DevGotchi', () => {
           vida_actual
         }
       }
-    `);
+    `, undefined, db);
 
     expect(result.errors).toBeUndefined();
     expect(result.data.cuidarDevgotchi).toEqual({ id: '1', vida_actual: 100 });
-    expect(mockQuery).toHaveBeenCalledTimes(3);
+    expect(db.query).toHaveBeenCalledTimes(3);
   });
 
-  test('conectarRepositorio persiste la URL recibida', async () => {
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [],
-      })
-      .mockResolvedValueOnce({
-        rows: [{ id: 2 }],
-      })
-      .mockResolvedValueOnce({
-        rows: [{
-          id: 1,
-          user_id: 2,
-          name: 'Pixel',
-          devgotchi_health: 100,
-          devgotchi_mood: 'neutral',
-          repository_url: 'https://github.com/devgotchi/app',
-        }],
-      });
+  test('conectarRepositorio usa el argumento y tipo esperados por el frontend', async () => {
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [] })
+        .mockResolvedValueOnce({ rows: [{ id: 1 }] })
+        .mockResolvedValueOnce({
+          rows: [{
+            id: 1,
+            uuid: 'project-uuid',
+            user_id: 1,
+            name: 'app',
+            repository_url: 'https://github.com/devgotchi/app',
+            devgotchi_health: 100,
+            devgotchi_mood: 'neutral',
+          }],
+        }),
+    };
 
     const result = await executeGraphQL(`
       mutation ConnectRepository($repositoryUrl: String!) {
@@ -109,14 +108,14 @@ describe('resolvers GraphQL de DevGotchi', () => {
           repository_url
         }
       }
-    `, { repositoryUrl: 'https://github.com/devgotchi/app' });
+    `, { repositoryUrl: 'https://github.com/devgotchi/app' }, db);
 
     expect(result.errors).toBeUndefined();
     expect(result.data.conectarRepositorio.repository_url)
       .toBe('https://github.com/devgotchi/app');
-    expect(mockQuery.mock.calls[2][1]).toEqual([
+    expect(db.query.mock.calls[2][1]).toEqual([
       expect.any(String),
-      2,
+      1,
       'app',
       'https://github.com/devgotchi/app',
     ]);

@@ -49,6 +49,31 @@ const initializeDatabase = async () => {
       // Para PostgreSQL, ejecutar todo junto
       await pool.query(schemaSql);
     }
+
+    const projectColumns = dbType === 'sqlite'
+      ? [
+        ['pet_name', 'TEXT'],
+        ['repository_analysis', 'TEXT'],
+        ['last_analysis_at', 'TIMESTAMP'],
+        ['is_current', 'INTEGER DEFAULT 0'],
+      ]
+      : [
+        ['pet_name', 'VARCHAR(80)'],
+        ['repository_analysis', 'TEXT'],
+        ['last_analysis_at', 'TIMESTAMP'],
+        ['is_current', 'BOOLEAN DEFAULT FALSE'],
+      ];
+
+    for (const [column, type] of projectColumns) {
+      if (dbType === 'sqlite') {
+        const columns = await pool.query('PRAGMA table_info(projects)');
+        if (!columns.rows.some((item) => item.name === column)) {
+          await pool.query(`ALTER TABLE projects ADD COLUMN ${column} ${type}`);
+        }
+      } else {
+        await pool.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS ${column} ${type}`);
+      }
+    }
     
     console.log('✅ Base de datos inicializada correctamente');
     return true;

@@ -3,37 +3,38 @@ jest.mock('node-cron', () => ({
 }));
 
 const cron = require('node-cron');
-const { applyHourlyHealthDecay, startHealthDecayCron } = require('./cronService');
+const { applyHourlyRepositoryHealthSync, startRepositoryHealthCron } = require('./cronService');
 
 describe('cron de salud de DevGotchi', () => {
   beforeEach(() => cron.schedule.mockReset());
 
-  test('reduce un punto a cada proyecto activo y no baja de cero', async () => {
+  test('sincroniza la vida con el diagnóstico técnico de cada repositorio', async () => {
+    const diagnosis = {
+      score: 68,
+      analyzedAt: '2026-09-27T02:00:00.000Z',
+      checks: [],
+      recommendations: [],
+    };
     const db = {
       query: jest.fn()
-        .mockResolvedValueOnce({ rows: [{ id: 1 }, { id: 2 }] })
+        .mockResolvedValueOnce({ rows: [{ id: 1, repository_url: 'https://github.com/acme/app' }] })
         .mockResolvedValueOnce({ rowCount: 1 })
-        .mockResolvedValueOnce({ rowCount: 1 }),
     };
+    const repositoryAnalyzer = jest.fn().mockResolvedValue(diagnosis);
 
-    const updatedCount = await applyHourlyHealthDecay(db);
+    const updatedCount = await applyHourlyRepositoryHealthSync(db, repositoryAnalyzer);
 
     expect(db.query).toHaveBeenNthCalledWith(
       1,
-      'SELECT id FROM projects WHERE status = $1',
+      'SELECT id, repository_url FROM projects WHERE status = $1 AND repository_url IS NOT NULL',
       ['active'],
     );
     expect(db.query).toHaveBeenNthCalledWith(
       2,
-      expect.stringContaining('WHEN devgotchi_health > 0 THEN devgotchi_health - 1'),
-      [1, 'active'],
+      expect.stringContaining('SET devgotchi_health = $1'),
+      [68, 'happy', JSON.stringify(diagnosis), diagnosis.analyzedAt, 1, 'active'],
     );
-    expect(db.query).toHaveBeenNthCalledWith(
-      3,
-      expect.stringContaining('WHEN devgotchi_health > 0 THEN devgotchi_health - 1'),
-      [2, 'active'],
-    );
-    expect(updatedCount).toBe(2);
+    expect(updatedCount).toBe(1);
   });
 
   test('programa el servicio al inicio de cada hora', () => {
@@ -41,7 +42,7 @@ describe('cron de salud de DevGotchi', () => {
     const db = { query: jest.fn() };
     cron.schedule.mockReturnValue(task);
 
-    const scheduledTask = startHealthDecayCron(db);
+    const scheduledTask = startRepositoryHealthCron(db, jest.fn());
 
     expect(cron.schedule).toHaveBeenCalledWith('0 * * * *', expect.any(Function));
     expect(scheduledTask).toBe(task);

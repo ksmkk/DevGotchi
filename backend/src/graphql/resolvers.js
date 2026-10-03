@@ -1,5 +1,119 @@
 const { randomUUID } = require('crypto');
 
+const LOCAL_USER_EMAIL = 'local@devgotchi.invalid';
+const LOCAL_USERNAME = 'devgotchi-local';
+
+const getOrCreateRepositoryOwner = async (db) => {
+  const existingUser = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
+  if (existingUser.rows.length > 0) {
+    return existingUser.rows[0].id;
+  }
+
+  const createdUser = await db.query(
+    `INSERT INTO users (uuid, email, username, password_hash, full_name)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT DO NOTHING
+     RETURNING id`,
+    [randomUUID(), LOCAL_USER_EMAIL, LOCAL_USERNAME, randomUUID(), 'Usuario local'],
+  );
+
+  if (createdUser.rows.length > 0) {
+    return createdUser.rows[0].id;
+  }
+
+  const concurrentlyCreatedUser = await db.query(
+    'SELECT id FROM users ORDER BY id ASC LIMIT 1',
+  );
+  if (concurrentlyCreatedUser.rows.length === 0) {
+    throw new Error('No se pudo preparar el usuario local');
+  }
+
+  return concurrentlyCreatedUser.rows[0].id;
+};
+
+const ANALYSIS_CACHE_MS = 5 * 60 * 1000;
+
+function parseStoredAnalysis(value) {
+  if (!value) return null;
+  try {
+    return typeof value === 'string' ? JSON.parse(value) : value;
+  } catch {
+    return null;
+  }
+}
+
+async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = false) {
+  const storedAnalysis = parseStoredAnalysis(project.repository_analysis);
+  const analyzedAt = project.last_analysis_at ? new Date(project.last_analysis_at).getTime() : 0;
+  if (!repositoryAnalyzer || !project.repository_url) {
+    return { ...project, repositoryDiagnosis: storedAnalysis };
+  }
+  if (!force && storedAnalysis && Date.now() - analyzedAt < ANALYSIS_CACHE_MS) {
+    if (project.devgotchi_health !== storedAnalysis.score) {
+      const synchronized = await db.query(
+        `UPDATE projects SET devgotchi_health = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2 RETURNING *`,
+        [storedAnalysis.score, project.id],
+      );
+      return { ...synchronized.rows[0], repositoryDiagnosis: storedAnalysis };
+    }
+    return { ...project, repositoryDiagnosis: storedAnalysis };
+  }
+
+  try {
+    const diagnosis = await repositoryAnalyzer(project.repository_url);
+    const mood = diagnosis.score <= 0 ? 'dead' : diagnosis.score < 50 ? 'sad' : 'happy';
+    const result = await db.query(
+      `UPDATE projects
+       SET devgotchi_health = $1, devgotchi_mood = $2,
+           repository_analysis = $3, last_analysis_at = $4, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $5
+       RETURNING *`,
+      [diagnosis.score, mood, JSON.stringify(diagnosis), diagnosis.analyzedAt, project.id],
+    );
+    return { ...result.rows[0], repositoryDiagnosis: diagnosis };
+  } catch (error) {
+    console.error('Error analyzing repository:', error.message);
+    const hasVerifiedAnalysis = storedAnalysis
+      && !storedAnalysis.checks?.some((item) => item.key === 'github-access');
+    const diagnosis = {
+      score: hasVerifiedAnalysis ? storedAnalysis.score : 50,
+      analyzedAt: new Date().toISOString(),
+      summary: 'GitHub requiere acceso para analizar este repositorio.',
+      checks: [{
+        key: 'github-access',
+        label: 'Acceso al repositorio',
+        status: 'unknown',
+        detail: 'El repositorio es privado o no está disponible. Configura GITHUB_TOKEN u OAuth con acceso de lectura.',
+        impact: 0,
+      }],
+      recommendations: [
+        'Conecta GitHub con permisos de lectura para habilitar tests, CI/CD y alertas de seguridad.',
+      ],
+    };
+    const result = await db.query(
+      `UPDATE projects
+       SET devgotchi_health = $1, devgotchi_mood = 'neutral',
+           repository_analysis = $2, last_analysis_at = $3, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $4
+       RETURNING *`,
+      [diagnosis.score, JSON.stringify(diagnosis), diagnosis.analyzedAt, project.id],
+    );
+    return { ...(result.rows[0] || project), repositoryDiagnosis: diagnosis };
+  }
+}
+
+async function markCurrentProject(db, project) {
+  const result = await db.query(
+    `UPDATE projects
+     SET is_current = CASE WHEN id = $1 THEN true ELSE false END,
+         updated_at = CASE WHEN id = $1 THEN CURRENT_TIMESTAMP ELSE updated_at END
+     RETURNING *`,
+    [project.id],
+  );
+  return result?.rows?.find((row) => String(row.id) === String(project.id)) || project;
+}
+
 /**
  * RESOLVERS DE GRAPHQL - DevGotchi
  * 
@@ -32,9 +146,15 @@ const resolvers = {
   // QUERIES - Lectura de datos
   // =====================
   Query: {
-    devgotchi: async (_, __, { db }) => {
-      const result = await db.query('SELECT * FROM projects ORDER BY created_at ASC LIMIT 1');
-      return result.rows.length === 0 ? null : formatProject(result.rows[0]);
+    devgotchi: async (_, __, { db, repositoryAnalyzer }) => {
+      const result = await db.query(
+        `SELECT * FROM projects
+         ORDER BY CASE WHEN is_current THEN 0 ELSE 1 END, updated_at DESC, id DESC
+         LIMIT 1`,
+      );
+      if (result.rows.length === 0) return null;
+      const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer);
+      return formatProject(project);
     },
 
     /**
@@ -172,7 +292,7 @@ const resolvers = {
   // MUTATIONS - Modificación de datos
   // =====================
   Mutation: {
-    conectarRepositorio: async (_, { repositoryUrl }, { db }) => {
+    conectarRepositorio: async (_, { repositoryUrl }, { db, repositoryAnalyzer }) => {
       const normalizedRepositoryUrl = normalizeRepositoryUrl(repositoryUrl);
       const existing = await db.query(
         'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
@@ -180,23 +300,50 @@ const resolvers = {
       );
 
       if (existing.rows.length > 0) {
-        return formatProject(existing.rows[0]);
+        const selectedProject = await markCurrentProject(db, existing.rows[0]);
+        const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
+        return formatProject(project);
       }
 
-      const user = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
-      if (user.rows.length === 0) {
-        throw new Error('No hay un usuario disponible para conectar el repositorio');
-      }
+      const userId = await getOrCreateRepositoryOwner(db);
 
       const name = normalizedRepositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
       const result = await db.query(
         `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
          VALUES ($1, $2, $3, $4, 100, 'neutral')
          RETURNING *`,
-        [randomUUID(), user.rows[0].id, name, normalizedRepositoryUrl],
+        [randomUUID(), userId, name, normalizedRepositoryUrl],
       );
 
+      const selectedProject = await markCurrentProject(db, result.rows[0]);
+      const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
+      return formatProject(project);
+    },
+
+    renombrarDevgotchi: async (_, { projectId, nombre }, { db }) => {
+      const normalizedName = String(nombre || '').trim();
+      if (normalizedName.length < 1 || normalizedName.length > 40) {
+        throw new Error('El nombre debe tener entre 1 y 40 caracteres');
+      }
+      const result = await db.query(
+        `UPDATE projects SET pet_name = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2 RETURNING *`,
+        [normalizedName, projectId],
+      );
+      if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
       return formatProject(result.rows[0]);
+    },
+
+    analizarRepositorio: async (_, { projectId }, { db, repositoryAnalyzer }) => {
+      const result = await db.query('SELECT * FROM projects WHERE id = $1', [projectId]);
+      if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
+      const project = await refreshRepositoryHealth(
+        result.rows[0],
+        db,
+        repositoryAnalyzer,
+        true,
+      );
+      return formatProject(project);
     },
 
     /**
@@ -355,10 +502,10 @@ const resolvers = {
 
         // Registrar en el historial
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, $3)
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, $4)
         `;
-        await db.query(insertHistoryQuery, [projectId, clampedHealth, mood]);
+        await db.query(insertHistoryQuery, [randomUUID(), projectId, clampedHealth, mood]);
 
         return formatProject(projectResult.rows[0]);
       } catch (error) {
@@ -391,10 +538,10 @@ const resolvers = {
         const updatedProject = await db.query(updateProjectQuery, [newHealth, targetProjectId]);
 
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, 'happy')
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, 'happy')
         `;
-        await db.query(insertHistoryQuery, [targetProjectId, newHealth]);
+        await db.query(insertHistoryQuery, [randomUUID(), targetProjectId, newHealth]);
 
         return formatProject(updatedProject.rows[0]);
       } catch (error) {
@@ -424,10 +571,10 @@ const resolvers = {
         const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
 
         const insertHistoryQuery = `
-          INSERT INTO health_history (project_id, health_value, mood)
-          VALUES ($1, $2, 'sad')
+          INSERT INTO health_history (uuid, project_id, health_value, mood)
+          VALUES ($1, $2, $3, 'sad')
         `;
-        await db.query(insertHistoryQuery, [projectId, newHealth]);
+        await db.query(insertHistoryQuery, [randomUUID(), projectId, newHealth]);
 
         return formatProject(updatedProject.rows[0]);
       } catch (error) {
@@ -683,9 +830,10 @@ function formatProject(row) {
     lastCommitDate: formatDate(row.last_commit_date),
     createdAt: formatDate(row.created_at),
     updatedAt: formatDate(row.updated_at),
-    nombre: row.name,
+    nombre: row.pet_name || row.name,
     vida_actual: row.devgotchi_health,
     repository_url: row.repository_url,
+    diagnostico: row.repositoryDiagnosis || parseStoredAnalysis(row.repository_analysis),
   };
 }
 
