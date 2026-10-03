@@ -1,0 +1,15 @@
+node_modules
+npm-debug.log*
+.env
+.env.*
+!.env.example
+coverage
+dist
+*.db
+*.db-shm
+*.db-wal
+*.log
+.data
+.git
+.github
+**/*.test.js

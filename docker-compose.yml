@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-devgotchi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devgotchi_password}
+      POSTGRES_DB: ${POSTGRES_DB:-devgotchi}
+    volumes:
+      - devgotchi-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 5s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-devgotchi}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devgotchi_password}
+      POSTGRES_DB: ${POSTGRES_DB:-devgotchi}
+      FRONTEND_URL: ${FRONTEND_URL:-http://127.0.0.1:5173}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
+      GITHUB_CALLBACK_URL: ${GITHUB_CALLBACK_URL:-}
+      GITHUB_WEBHOOK_SECRET: ${GITHUB_WEBHOOK_SECRET:-}
+      GITHUB_WEBHOOK_URL: ${GITHUB_WEBHOOK_URL:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      GITHUB_CONNECTION_STORE: /app/.data/github-connections.json
+    ports:
+      - "${BACKEND_PORT:-3000}:3000"
+    volumes:
+      - devgotchi-backend-data:/app/.data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  devgotchi-postgres-data:
+  devgotchi-backend-data:

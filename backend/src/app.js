@@ -83,6 +83,7 @@ async function startApolloServer() {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
+    cache: 'bounded',
     // Configurar contexto - se pasa a todos los resolvers
     context: () => ({
       db: pool,

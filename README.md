@@ -1,20 +1,36 @@
 # DevGotchi
 
-DevGotchi es una mascota virtual que representa la salud de un repositorio y sus
-pipelines. El backend recibe estados de actividad, los evalúa y expone el estado
-de la mascota mediante GraphQL. El frontend React muestra la vida y permite
-conectar un repositorio de GitHub.
+DevGotchi es una aplicación monolítica para observar la salud técnica de un repositorio de GitHub mediante una mascota virtual. El frontend React consume el contrato GraphQL del backend Node.js; el backend analiza señales reales del repositorio, calcula un puntaje, persiste el estado y recibe eventos por REST.
+
+## Arquitectura y stack
+
+El repositorio contiene un único producto desplegable y versionado en conjunto:
+
+- `src/`: interfaz React + TypeScript + Vite.
+- `backend/src/`: API Express, Apollo Server, GraphQL, REST, OAuth, webhooks y cron.
+- `backend/db/`: acceso e inicialización compatible con SQLite y PostgreSQL.
+- `.github/workflows/ci.yml`: verificación automática del monolito.
+- `docker-compose.yml`: backend dockerizado y PostgreSQL.
+
+Tecnologías: Node.js 22, React, TypeScript, Vite, Express, Apollo Server, GraphQL, PostgreSQL, SQLite, Jest y Vitest.
+
+```mermaid
+flowchart LR
+  GitHub[GitHub API / OAuth / Webhooks] -->|HTTPS + HMAC| API[Backend Express + Apollo]
+  UI[React + Vite] -->|GraphQL| API
+  API --> Engine[Motor de diagnóstico]
+  Cron[Reanálisis cada hora] --> Engine
+  Engine --> DB[(SQLite local o PostgreSQL)]
+  DB --> API
+  API -->|vida, estado e informe| UI
+```
 
 ## Requisitos
 
 - Git.
-- Node.js 20 o superior y npm.
-- Docker Desktop con Docker Compose.
-- Windows PowerShell, macOS/Linux shell o una terminal equivalente.
+- Node.js 22 y npm.
+- Docker Desktop con Docker Compose para la demostración PostgreSQL.
 
-Verifica las herramientas:
-
-Para conectar todo, usamos REST para recibir los webhooks de GitHub Actions y GraphQL para consultar el estado desde React. El frontend actualiza la tarjeta mediante polling.
 ```bash
 node --version
 npm --version
@@ -22,282 +38,141 @@ docker --version
 docker compose version
 ```
 
-## Instalacion
+## Demo local con SQLite
 
-Clona el repositorio y entra en su carpeta:
-
-1. Clonar el repositorio.
-2. Para el backend:
-   - Entrar a la carpeta `backend`.
-   - Instalar dependencias con `npm install`.
-   - Levantar el servidor con `npm run dev`.
-3. Para el frontend: entrar a la carpeta y correr `npm install`.
-4. Levantar la base de datos siguiendo la sección de PostgreSQL.
-5. Abrir `http://localhost:5173` y conectar una URL de GitHub desde el formulario.
-
-El frontend consulta GraphQL en `http://localhost:3000/graphql`. Para cambiarlo,
-definir `VITE_GRAPHQL_URL` antes de ejecutar Vite.
-```bash
-git clone <URL_DEL_REPOSITORIO>
-cd DevGotchi
-```
-
-Instala las dependencias de cada aplicacion:
-
-1. Copiar `.env.example` a `.env` en la carpeta `backend`.
-2. Desde la raíz del proyecto, iniciar PostgreSQL: `docker compose up -d`.
-3. En la carpeta `backend`, instalar dependencias: `npm install`.
-4. Iniciar el servidor: `npm run dev`.
-5. Verificar conexión: `curl http://localhost:3000/estado-db`.
-
-El backend inicializa automáticamente el esquema de la base de datos al arrancar.
-```bash
-cd backend
-npm install
-
-cd ../frontend
-npm install
-cd ..
-```
-
-## Variables de entorno
-
-No coloques secretos en React ni en archivos versionados. Los archivos `.env`
-locales estan ignorados por Git.
-
-### Backend
-
-Eso permite que el frontend solo se preocupe por renderizar la mascota según el estado del proyecto.
-
-### Flujo GitHub Actions
-
-1. Configurar `GITHUB_WEBHOOK_SECRET` en `backend/.env` y usar el mismo secreto en GitHub.
-2. Crear un webhook apuntando a `POST /api/webhooks/project-status`.
-3. Seleccionar el evento `Workflow runs` y enviar el formato JSON.
-4. Conectar primero el repositorio desde el formulario del frontend.
-
-Cuando el secreto está configurado, el backend valida `X-Hub-Signature-256` y guarda
-la nueva vida en `projects` y `health_history`.
-Copia el ejemplo:
-
-```bash
-cd backend
-cp .env.example .env
-```
-
-En Windows PowerShell usa:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Variables disponibles en `backend/.env`:
-
-| Variable | Uso |
-| --- | --- |
-| `PORT` | Puerto HTTP del backend. Por defecto: `3000`. |
-| `FRONTEND_URL` | Origen permitido para el frontend local, por ejemplo `http://127.0.0.1:5173`. |
-| `GITHUB_CLIENT_ID` | Client ID de la OAuth App de GitHub. |
-| `GITHUB_CLIENT_SECRET` | Client secret de GitHub. Nunca lo expongas al frontend. |
-| `GITHUB_CALLBACK_URL` | URL de callback OAuth, por ejemplo `http://localhost:3000/api/auth/github/callback`. |
-| `GITHUB_WEBHOOK_SECRET` | Secreto compartido para validar firmas HMAC de webhooks. |
-| `SESSION_SECRET` | Secreto usado para proteger el estado temporal de OAuth. |
-| `DB_HOST` | Host de PostgreSQL. Por defecto: `localhost`. |
-| `DB_PORT` | Puerto de PostgreSQL. Por defecto: `5432`. |
-| `POSTGRES_USER` | Usuario de PostgreSQL. |
-| `POSTGRES_PASSWORD` | Contraseña de PostgreSQL. |
-| `POSTGRES_DB` | Nombre de la base de datos. |
-
-Para este flujo local puedes conservar los valores por defecto de PostgreSQL y
-dejar vacias las variables de GitHub si solo vas a probar la aplicacion y el
-webhook simulado.
-
-### Frontend
-
-Copia el ejemplo:
-
-```bash
-cd frontend
-cp .env.example .env
-```
-
-En Windows PowerShell:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-El frontend usa:
-
-| Variable | Uso |
-| --- | --- |
-| `VITE_GRAPHQL_URL` | Endpoint GraphQL. Para desarrollo: `http://127.0.0.1:3000/graphql`. |
-| `VITE_SHOW_TECHNICAL_OPTIONS` | Muestra opciones tecnicas si vale `true`. |
-
-No pongas `GITHUB_CLIENT_SECRET`, `SESSION_SECRET` ni `GITHUB_WEBHOOK_SECRET`
-en variables `VITE_*`: Vite las incluiria en el codigo del navegador.
-
-## Levantar el proyecto completo
-
-Para la demo local, instala las dependencias una vez y luego levanta backend y
-frontend con un solo comando desde la raíz:
+La vía más rápida no requiere secretos ni Docker. Desde la raíz:
 
 ```bash
 npm run install:all
 npm run demo
 ```
 
-El comando espera a que GraphQL responda antes de iniciar la interfaz y deja la
-aplicación disponible en `http://127.0.0.1:5173/`. El desarrollo local usa
-SQLite por defecto, por lo que PostgreSQL no es obligatorio para la demo.
+El script inicia el backend, espera a que GraphQL responda y luego inicia Vite. Abre `http://127.0.0.1:5173`. SQLite se usa cuando `DB_HOST=localhost` o no se define un host remoto. La base local `devgotchi.db` está ignorada por Git.
 
-Los pasos siguientes permiten levantar cada servicio por separado cuando se
-necesita probar PostgreSQL o depurar un proceso concreto.
-
-### 1. PostgreSQL con Docker
-
-Desde la raiz del proyecto:
-
-```bash
-docker compose -f frontend/docker-compose.yml up -d
-```
-
-Comprueba el contenedor:
-
-```bash
-docker ps
-```
-
-Debe aparecer `devgotchi-postgres` en estado `Up`.
-
-### 2. Backend
-
-En una terminal nueva:
-
-```bash
-cd backend
-npm run dev
-```
-
-El backend queda disponible en `http://127.0.0.1:3000`.
-
-### 3. Frontend
-
-En otra terminal:
-
-```bash
-cd frontend
-npm run dev -- --host 127.0.0.1
-```
-
-Abre `http://127.0.0.1:5173/` en el navegador.
-
-## Verificar la conexion
-
-Backend activo:
+Pruebas rápidas:
 
 ```bash
 curl http://127.0.0.1:3000/health
-```
-
-Base de datos conectada:
-
-```bash
 curl http://127.0.0.1:3000/estado-db
-```
-
-GraphQL responde:
-
-```bash
 curl -X POST http://127.0.0.1:3000/graphql \
   -H "Content-Type: application/json" \
   -d '{"query":"query { devgotchi { id nombre vida_actual repository_url } }"}'
 ```
 
-En PowerShell, si `curl` no funciona como esperado:
+## Backend dockerizado con PostgreSQL
 
-```powershell
-$body = @{ query = "query { devgotchi { id nombre vida_actual repository_url } }" } | ConvertTo-Json
-Invoke-RestMethod `
-  -Uri http://127.0.0.1:3000/graphql `
-  -Method Post `
-  -ContentType "application/json" `
-  -Body $body
+Desde la raíz, opcionalmente copia `.env.example` como `.env` y luego ejecuta:
+
+```bash
+docker compose up --build
 ```
+
+Compose construye `backend/Dockerfile` sobre Node.js 22 Alpine, instala con `npm ci --omit=dev`, espera el healthcheck de PostgreSQL y expone el backend en `http://127.0.0.1:3000`. El backend se conecta al host interno `postgres`, nunca a `localhost`, e inicializa el esquema automáticamente. PostgreSQL y el almacén cifrado OAuth usan volúmenes persistentes.
+
+Comprobación:
+
+```bash
+docker compose ps
+curl http://127.0.0.1:3000/health
+curl http://127.0.0.1:3000/estado-db
+docker compose exec postgres psql -U devgotchi -d devgotchi -c "\\dt"
+```
+
+Para detener sin borrar datos:
+
+```bash
+docker compose down
+```
+
+`docker compose down -v` también elimina los volúmenes y debe usarse solo cuando se quiera reiniciar los datos.
+
+## Variables de entorno
+
+No versionar archivos `.env`. Los ejemplos seguros son `.env.example`, `backend/.env.example` y `frontend/.env.example`.
+
+| Variable | Uso |
+| --- | --- |
+| `PORT` / `BACKEND_PORT` | Puerto interno / publicado del backend. |
+| `DB_HOST`, `DB_PORT` | `localhost` activa SQLite; Compose usa `postgres:5432`. |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Credenciales locales de PostgreSQL. |
+| `FRONTEND_URL` | Origen permitido por CORS. |
+| `VITE_GRAPHQL_URL` | Endpoint GraphQL consumido por React. |
+| `GITHUB_TOKEN` | Token opcional de solo lectura para repositorios privados y alertas. |
+| `GITHUB_CLIENT_ID`, `GITHUB_CLIENT_SECRET`, `GITHUB_CALLBACK_URL` | OAuth App de GitHub. |
+| `SESSION_SECRET` | Deriva la clave AES-256-GCM para el almacén de conexiones. |
+| `GITHUB_CONNECTION_STORE` | Ruta opcional del almacén cifrado. |
+| `GITHUB_WEBHOOK_SECRET`, `GITHUB_WEBHOOK_URL` | Firma HMAC y callback público del webhook. |
+
+## Funcionalidad
+
+### Diagnóstico y motor de salud
+
+Al conectar o actualizar un repositorio, el backend consulta GitHub para detectar tests, configuración de coverage, workflows versionados y ejecuciones recientes, `.gitignore`, archivos `.env` rastreados y señales de seguridad cuando hay permisos. Cada hallazgo produce un estado, impacto y recomendación. El puntaje final de 0 a 100 se convierte en la vida y el ánimo de la mascota. Los resultados se guardan para evitar llamadas innecesarias durante cinco minutos.
+
+El cron ejecuta un reanálisis técnico cada hora (`0 * * * *`) para proyectos activos. No aplica una pérdida arbitraria de vida: vuelve a consultar las señales del repositorio y sincroniza puntaje, ánimo, informe y fecha.
+
+### GraphQL y REST
+
+- GraphQL: `POST /graphql`; consultas de usuarios, proyectos, mascota, actividades, historial y webhooks; mutaciones de conexión, análisis, renombrado y mantenimiento.
+- REST: `GET /health`, `GET /estado-db`, `GET /api/projects`, `POST /api/webhooks/project-status`.
+- Webhook GitHub: `POST /api/github/webhook`, con validación `X-Hub-Signature-256`, normalización de eventos y deduplicación por delivery.
+
+### OAuth y seguridad
+
+El flujo OAuth usa Authorization Code, `state` firmado, PKCE S256 y cookie `HttpOnly`/`SameSite=Lax`. Solicita `read:user repo:status write:repo_hook`, necesarios para identificar al usuario, leer estados y registrar el webhook. Las credenciales reales nunca son necesarias para tests o demo local. Cuando se conecta un repositorio, access y refresh tokens quedan cifrados con AES-256-GCM en el backend; no se envían al navegador.
 
 ## Pruebas y calidad
 
-Pruebas del backend:
-
 ```bash
+# Backend
 cd backend
+npm ci
 npm test
-```
+npm run test:coverage
 
-Incluyen evaluacion de estados, resolvers GraphQL, OAuth y firma HMAC del
-webhook. Las pruebas OAuth no usan internet ni credenciales reales.
-
-Pruebas, lint y build del frontend:
-
-```bash
-cd frontend
+# Frontend
+cd ../frontend
+npm ci
 npm test
 npm run lint
+npm run typecheck
 npm run build
+
+# Verificación completa desde la raíz
+cd ..
+npm run verify
 ```
 
-## Probar el MVP completo
+Jest exige globalmente al menos 60% en statements, branches, functions y lines. Las pruebas cubren servicios, resolvers, REST/GraphQL, SQLite/PostgreSQL, cron, OAuth/PKCE, almacenamiento cifrado y validación HMAC. Vitest valida los estados de carga/error, conexión, análisis, renombrado e informe del frontend.
 
-1. Levanta PostgreSQL, backend y frontend con los comandos anteriores.
-2. Abre `http://127.0.0.1:5173/`.
-3. Comprueba que aparece DevGotchi y su vida actual.
-4. Pulsa **Cuidar +10** y verifica que la vida se actualiza sin recargar.
-5. Introduce una URL como `https://github.com/usuario/repositorio` y pulsa
-   **Conectar**.
-6. Para simular actividad de un pipeline, envia un webhook local:
+## Integración continua
 
-```bash
-curl -X POST http://127.0.0.1:3000/api/webhooks/project-status \
-  -H "Content-Type: application/json" \
-  -d '{"project":"devgotchi/app","repository":"devgotchi/app","branch":"main","workflow":"push","status":"success"}'
-```
+GitHub Actions se ejecuta en pushes a `main` y pull requests hacia `main`, con Node.js 22 y caché de npm:
 
-Los estados aceptados son `success`, `failure`, `running`, `queued`, `error` y
-`unknown`. El estado calculado puede consultarse con:
+- Backend: `npm ci`, tests y coverage con umbral obligatorio de 60% en las cuatro métricas.
+- Frontend: `npm ci`, tests, lint, type-check y build de producción.
 
-```bash
-curl http://127.0.0.1:3000/api/projects/devgotchi/app
-```
+No requiere secretos ni acceso real a GitHub; las integraciones externas se prueban con dobles controlados.
 
-El endpoint seguro para futuros webhooks de GitHub es
-`POST /api/github/webhook`; requiere `X-Hub-Signature-256` y responde `202` con
-una firma valida. En este primer corte acepta el evento, pero todavia no cambia
-la vida de DevGotchi.
+## Cumplimiento de requisitos del proyecto
 
-## OAuth de GitHub
+| Requisito | Evidencia en el repositorio | Comando de verificación |
+| --- | --- | --- |
+| Arquitectura monolítica | Frontend, backend, DB, CI y documentación en un repositorio | `git ls-files` |
+| Frontend y backend identificables | `src/`, `frontend/` (tooling) y `backend/src/` | `npm run demo` |
+| GraphQL y REST | Apollo `/graphql`; Express `/health`, `/estado-db`, `/api/*` | consultas `curl` anteriores |
+| Backend dockerizado | `backend/Dockerfile`, `backend/.dockerignore` | `docker compose build --no-cache backend` |
+| PostgreSQL persistente | `docker-compose.yml`, healthcheck y volumen | `docker compose up --build` |
+| SQLite local | Adaptador `node:sqlite` y esquema específico | `npm run demo` + `/estado-db` |
+| Coverage mínimo 60% | Umbrales globales Jest en `backend/package.json` | `npm --prefix backend run test:coverage` |
+| Tests frontend/backend | Jest + Supertest; Vitest + Testing Library | `npm test` en cada paquete |
+| CI | `.github/workflows/ci.yml` | pestaña Actions / lectura del workflow |
+| Diagnóstico real | `repositoryHealthService.js` consulta GitHub y emite recomendaciones | tests del servicio y análisis manual |
+| Cron de reanálisis | `cronService.js` reanaliza cada hora | tests del cron |
+| OAuth seguro | state firmado, PKCE y tokens cifrados | tests de auth y connection store |
+| Webhooks firmados | HMAC SHA-256 y deduplicación | tests de webhooks |
+| Material de defensa | README y `docs/PRESENTACION.md` | revisión documental |
 
-El backend expone:
+## Guion técnico
 
-```text
-GET /api/auth/github
-GET /api/auth/github/callback
-```
-
-El flujo usa Authorization Code, `state`, PKCE S256 y el scope minimo `read:user`.
-Configura la callback exacta en la OAuth App de GitHub y en `GITHUB_CALLBACK_URL`.
-Los tokens permanecen en el backend y todavia no se persisten porque esta etapa
-no incluye una capa de almacenamiento de credenciales.
-
-## Detener el entorno
-
-Deten el backend y frontend con `Ctrl+C`. Para detener PostgreSQL:
-
-```bash
-docker compose -f frontend/docker-compose.yml down
-```
-
-Para borrar tambien los datos locales de PostgreSQL:
-
-```bash
-docker compose -f frontend/docker-compose.yml down -v
-```
+El guion de presentación, decisiones de arquitectura, seguridad, evidencias y próximos pasos está en [`docs/PRESENTACION.md`](docs/PRESENTACION.md).
