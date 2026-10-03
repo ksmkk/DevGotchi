@@ -139,6 +139,21 @@ en variables `VITE_*`: Vite las incluiria en el codigo del navegador.
 
 ## Levantar el proyecto completo
 
+Para la demo local, instala las dependencias una vez y luego levanta backend y
+frontend con un solo comando desde la raíz:
+
+```bash
+npm run install:all
+npm run demo
+```
+
+El comando espera a que GraphQL responda antes de iniciar la interfaz y deja la
+aplicación disponible en `http://127.0.0.1:5173/`. El desarrollo local usa
+SQLite por defecto, por lo que PostgreSQL no es obligatorio para la demo.
+
+Los pasos siguientes permiten levantar cada servicio por separado cuando se
+necesita probar PostgreSQL o depurar un proceso concreto.
+
 ### 1. PostgreSQL con Docker
 
 Desde la raiz del proyecto:

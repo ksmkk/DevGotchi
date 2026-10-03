@@ -124,11 +124,17 @@ function App() {
   }
 
   if (error) {
+    const errorMessage = /failed to fetch|network request failed|fetch failed/i.test(
+      error.message,
+    )
+      ? "El backend no está disponible. Inicia la demo con npm run demo desde la raíz y vuelve a intentar."
+      : error.message;
+
     return (
       <main className="app-shell app-shell--centered">
         <section className="query-status query-status--error" role="alert">
           <h1>No se pudo cargar DevGotchi</h1>
-          <p>{error.message}</p>
+          <p>{errorMessage}</p>
           <button type="button" onClick={() => void refetch()}>Reintentar</button>
         </section>
       </main>

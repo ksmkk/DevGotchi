@@ -224,6 +224,23 @@ describe("vista interactiva de DevGotchi", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("Backend no disponible");
     expect(screen.getByRole("button", { name: "Reintentar" })).toBeEnabled();
   });
+
+  it("traduce el error de red y explica cómo levantar la demo", async () => {
+    render(
+      <MockedProvider mocks={[{
+        request: { query: GET_DEVGOTCHI },
+        error: new TypeError("Failed to fetch"),
+      }]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "El backend no está disponible",
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("npm run demo");
+    expect(screen.queryByText("Failed to fetch")).not.toBeInTheDocument();
+  });
 });
 
 describe("estados visuales de la mascota", () => {
