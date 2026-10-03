@@ -5,8 +5,8 @@
   "scripts": {
     "demo": "node scripts/start-demo.js",
     "dev": "npm run demo",
-    "install:all": "npm --prefix backend install && npm --prefix frontend install",
+    "install:all": "npm --prefix backend ci && npm --prefix frontend ci",
     "test": "npm --prefix backend test && npm --prefix frontend test",
-    "verify": "npm --prefix backend test && npm --prefix frontend test && npm --prefix frontend run lint && npm --prefix frontend run build"
+    "verify": "npm --prefix backend run test:coverage && npm --prefix frontend test && npm --prefix frontend run lint && npm --prefix frontend run typecheck && npm --prefix frontend run build"
   }
 }

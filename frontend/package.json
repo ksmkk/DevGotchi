@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "mock-api": "node mock-graphql.js",
     "test": "vitest run --config vitest.config.ts",
+    "typecheck": "tsc -b --pretty false",
     "generate": "graphql-codegen --config codegen.yml",
     "preview": "vite preview"
   },

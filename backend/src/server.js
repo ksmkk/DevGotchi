@@ -9,7 +9,10 @@ const { initializeDatabase } = require('../db/database-init');
 async function main() {
   try {
     // 1. Inicializar la base de datos
-    await initializeDatabase();
+    const databaseReady = await initializeDatabase();
+    if (!databaseReady) {
+      throw new Error('No se pudo inicializar la base de datos');
+    }
     console.log('✅ Base de datos inicializada');
 
     // 2. Iniciar Apollo Server
