@@ -128,21 +128,6 @@ async function markCurrentProject(db, project) {
   return result?.rows?.find((row) => String(row.id) === String(project.id)) || project;
 }
 
-/**
- * RESOLVERS DE GRAPHQL - DevGotchi
- * 
- * Los resolvers son funciones que se ejecutan cuando GraphQL recibe una consulta.
- * Cada resolver corresponde a un campo en el schema.
- * 
- * Estructura de un resolver:
- * resolver(parent, args, context, info) {
- *   // parent: objeto padre (para campos anidados)
- *   // args: argumentos de la consulta
- *   // context: datos compartidos (BD, auth, etc)
- *   // info: información sobre la consulta
- * }
- */
-
 const resolvers = {
   Devgotchi: {
     salud: (devgotchi) => {
@@ -156,9 +141,6 @@ const resolvers = {
       };
     },
   },
-  // =====================
-  // QUERIES - Lectura de datos
-  // =====================
   Query: {
     devgotchi: async (_, __, { db, repositoryAnalyzer }) => {
       const result = await db.query(
@@ -171,11 +153,6 @@ const resolvers = {
       return formatProject(project);
     },
 
-    /**
-     * Query.users
-     * Retorna todos los usuarios
-     * Ejemplo: query { users { id username } }
-     */
     users: async (_, __, { db }) => {
       try {
         const query = 'SELECT * FROM users ORDER BY created_at DESC';
@@ -187,11 +164,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.user(id)
-     * Retorna un usuario específico
-     * Ejemplo: query { user(id: "1") { id username email } }
-     */
     user: async (_, { id }, { db }) => {
       try {
         const query = 'SELECT * FROM users WHERE id = $1';
@@ -204,11 +176,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.projects
-     * Retorna todos los proyectos
-     * Ejemplo: query { projects { id name devgotchiHealth } }
-     */
     projects: async (_, __, { db }) => {
       try {
         const query = 'SELECT * FROM projects ORDER BY created_at DESC';
@@ -220,11 +187,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.project(id)
-     * Retorna un proyecto específico
-     * Ejemplo: query { project(id: "1") { id name devgotchiHealth } }
-     */
     project: async (_, { id }, { db }) => {
       try {
         const query = 'SELECT * FROM projects WHERE id = $1';
@@ -237,11 +199,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.userProjects(userId)
-     * Retorna todos los proyectos de un usuario
-     * Ejemplo: query { userProjects(userId: "1") { id name } }
-     */
     userProjects: async (_, { userId }, { db }) => {
       try {
         const query = 'SELECT * FROM projects WHERE user_id = $1 ORDER BY created_at DESC';
@@ -253,11 +210,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.projectActivities(projectId)
-     * Retorna todas las actividades de un proyecto
-     * Ejemplo: query { projectActivities(projectId: "1") { id activityType } }
-     */
     projectActivities: async (_, { projectId }, { db }) => {
       try {
         const query = 'SELECT * FROM activities WHERE project_id = $1 ORDER BY created_at DESC';
@@ -269,11 +221,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.projectHealthHistory(projectId)
-     * Retorna el historial de salud de un proyecto
-     * Ejemplo: query { projectHealthHistory(projectId: "1") { healthValue mood } }
-     */
     projectHealthHistory: async (_, { projectId }, { db }) => {
       try {
         const query = 'SELECT * FROM health_history WHERE project_id = $1 ORDER BY created_at DESC';
@@ -285,11 +232,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Query.projectWebhooks(projectId)
-     * Retorna todos los webhooks de un proyecto
-     * Ejemplo: query { projectWebhooks(projectId: "1") { id webhookUrl } }
-     */
     projectWebhooks: async (_, { projectId }, { db }) => {
       try {
         const query = 'SELECT * FROM webhooks WHERE project_id = $1 ORDER BY created_at DESC';
@@ -302,9 +244,6 @@ const resolvers = {
     },
   },
 
-  // =====================
-  // MUTATIONS - Modificación de datos
-  // =====================
   Mutation: {
     conectarRepositorio: async (_, { repositoryUrl }, { db, repositoryAnalyzer }) => {
       const normalizedRepositoryUrl = normalizeRepositoryUrl(repositoryUrl);
@@ -360,11 +299,6 @@ const resolvers = {
       return formatProject(project);
     },
 
-    /**
-     * Mutation.createUser
-     * Crea un nuevo usuario
-     * Retorna el usuario creado
-     */
     createUser: async (_, { email, username, password, fullName }, { db }) => {
       try {
         const passwordHash = await hashPassword(password);
@@ -381,10 +315,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.updateUser
-     * Actualiza los datos de un usuario
-     */
     updateUser: async (_, { id, email, username, fullName, avatarUrl }, { db }) => {
       try {
         const updates = [];
@@ -428,10 +358,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.createProject
-     * Crea un nuevo proyecto
-     */
     createProject: async (_, { userId, name, description, repositoryUrl }, { db }) => {
       try {
         const query = `
@@ -447,10 +373,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.updateProject
-     * Actualiza los datos de un proyecto
-     */
     updateProject: async (_, { id, name, description, repositoryUrl, status }, { db }) => {
       try {
         const updates = [];
@@ -494,17 +416,10 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.updateDevgotchiHealth
-     * Actualiza la salud y el mood del DevGotchi
-     * Importante: También crea un registro en health_history
-     */
     updateDevgotchiHealth: async (_, { projectId, healthValue, mood }, { db }) => {
       try {
-        // Validar que la salud esté entre 0 y 100
         const clampedHealth = Math.max(0, Math.min(100, healthValue));
 
-        // Actualizar el proyecto
         const updateProjectQuery = `
           UPDATE projects
           SET devgotchi_health = $1, devgotchi_mood = $2
@@ -514,7 +429,6 @@ const resolvers = {
         const projectResult = await db.query(updateProjectQuery, [clampedHealth, mood, projectId]);
         if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
 
-        // Registrar en el historial
         const insertHistoryQuery = `
           INSERT INTO health_history (uuid, project_id, health_value, mood)
           VALUES ($1, $2, $3, $4)
@@ -528,10 +442,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.cuidarDevgotchi
-     * Recupera 10 puntos de salud sin superar el máximo de 100
-     */
     cuidarDevgotchi: async (_, { projectId }, { db }) => {
       try {
         const projectQuery = projectId
@@ -564,10 +474,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.disminuirVida
-     * Reduce 10 puntos de salud sin bajar de cero
-     */
     disminuirVida: async (_, { projectId }, { db }) => {
       try {
         const projectQuery = 'SELECT devgotchi_health FROM projects WHERE id = $1';
@@ -597,10 +503,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.createActivity
-     * Registra una nueva actividad en un proyecto
-     */
     createActivity: async (_, { projectId, activityType, description, metadata, healthImpact, moodImpact }, { db }) => {
       try {
         const query = `
@@ -624,10 +526,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.createWebhook
-     * Crea un webhook para un proyecto
-     */
     createWebhook: async (_, { projectId, webhookUrl, eventType }, { db }) => {
       try {
         const query = `
@@ -643,10 +541,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.toggleWebhook
-     * Activa o desactiva un webhook
-     */
     toggleWebhook: async (_, { id, isActive }, { db }) => {
       try {
         const query = `
@@ -664,10 +558,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.deleteProject
-     * Elimina un proyecto
-     */
     deleteProject: async (_, { id }, { db }) => {
       try {
         const query = 'DELETE FROM projects WHERE id = $1 RETURNING id';
@@ -679,10 +569,6 @@ const resolvers = {
       }
     },
 
-    /**
-     * Mutation.deleteUser
-     * Elimina un usuario
-     */
     deleteUser: async (_, { id }, { db }) => {
       try {
         const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
@@ -695,15 +581,6 @@ const resolvers = {
     },
   },
 
-  // =====================
-  // FIELD RESOLVERS - Resolvers para campos anidados
-  // =====================
-  
-  /**
-   * Cuando GraphQL necesita resolver campos anidados.
-   * Ejemplo: query { project { user { username } } }
-   * Necesita un resolver para Project.user
-   */
   Project: {
     user: async (parent, _, { db }) => {
       try {
@@ -807,15 +684,6 @@ const resolvers = {
   },
 };
 
-// =====================
-// FUNCIONES AUXILIARES - Formateo de datos
-// =====================
-
-/**
- * Formateo de Usuario
- * Convierte los nombres de columnas de BD (snake_case)
- * a nombres de GraphQL (camelCase)
- */
 function formatUser(row) {
   return {
     id: row.id.toString(),

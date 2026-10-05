@@ -1,57 +1,37 @@
-/**
- * SCHEMA DE GRAPHQL - DevGotchi
- * 
- * Este archivo define la ESTRUCTURA de los datos disponibles en GraphQL.
- * Piensa en esto como un "contrato" que dice:
- * - Qué tipos de datos existen (User, Project, etc)
- * - Qué campos tiene cada tipo
- * - Qué operaciones puedo hacer (queries y mutations)
- */
-
-const typeDefs = `#graphql
-  # =====================
-  # TIPOS (Types)
-  # =====================
+const typeDefs = `
   
-  """
-  Tipo User: Representa un usuario del sistema
-  """
   type User {
-    id: ID!                    # ID único, obligatorio
-    uuid: String!              # UUID generado por la BD
+    id: ID!
+    uuid: String!
     email: String!
     username: String!
     fullName: String
     avatarUrl: String
-    status: String             # active, inactive, banned
-    projects: [Project!]!      # Lista de proyectos del usuario
+    status: String
+    projects: [Project!]!
     createdAt: String!
     updatedAt: String!
   }
 
-  """
-  Tipo Project: Representa un proyecto DevGotchi
-  """
   type Project {
     id: ID!
     uuid: String!
     userId: ID!
-    user: User!                # Relación: quién es el propietario
+    user: User!
     name: String!
     description: String
     repositoryUrl: String
-    status: String             # active, archived, deleted
-    devgotchiHealth: Int!      # 0-100
-    devgotchiMood: String!     # happy, sad, neutral, angry
+    status: String
+    devgotchiHealth: Int!
+    devgotchiMood: String!
     lastCommitDate: String
-    activities: [Activity!]!   # Actividades del proyecto
-    healthHistory: [HealthRecord!]!  # Histórico de salud
-    webhooks: [Webhook!]!      # Webhooks del proyecto
+    activities: [Activity!]!
+    healthHistory: [HealthRecord!]!
+    webhooks: [Webhook!]!
     createdAt: String!
     updatedAt: String!
   }
 
-  """Vista compatible con el contrato del frontend de DevGotchi."""
   type Devgotchi {
     id: ID!
     nombre: String!
@@ -84,34 +64,25 @@ const typeDefs = `#graphql
     recommendations: [String!]!
   }
 
-  """Estado actual de salud del repositorio conectado."""
   type SaludRepositorio {
     puntosVida: Int!
     ultimoCommit: String
-    """Valores posibles: Feliz, Triste o Muerto."""
     estado: String!
   }
 
-  """
-  Tipo Activity: Representa una actividad/evento en el proyecto
-  (commits, PRs, issues, etc)
-  """
   type Activity {
     id: ID!
     uuid: String!
     projectId: ID!
     project: Project!
-    activityType: String!     # commit, pr_opened, pr_closed, issue
+    activityType: String!
     description: String
-    metadata: String          # JSON como string (alternativa: usar Scalar)
-    healthImpact: Int         # -10 a 10
+    metadata: String
+    healthImpact: Int
     moodImpact: String
     createdAt: String!
   }
 
-  """
-  Tipo HealthRecord: Registro histórico de salud del DevGotchi
-  """
   type HealthRecord {
     id: ID!
     uuid: String!
@@ -122,87 +93,45 @@ const typeDefs = `#graphql
     createdAt: String!
   }
 
-  """
-  Tipo Webhook: Configuración de webhooks para un proyecto
-  """
   type Webhook {
     id: ID!
     uuid: String!
     projectId: ID!
     project: Project!
     webhookUrl: String!
-    eventType: String!        # push, pull_request, issue
+    eventType: String!
     isActive: Boolean!
     createdAt: String!
     updatedAt: String!
   }
 
-  # =====================
-  # QUERIES (Lectura de datos)
-  # =====================
-  
   type Query {
-    """Devuelve el DevGotchi del primer proyecto conectado."""
     devgotchi: Devgotchi
 
-    """
-    Obtener todos los usuarios del sistema
-    """
     users: [User!]!
 
-    """
-    Obtener un usuario específico por ID
-    """
     user(id: ID!): User
 
-    """
-    Obtener todos los proyectos
-    """
     projects: [Project!]!
 
-    """
-    Obtener un proyecto específico por ID
-    """
     project(id: ID!): Project
 
-    """
-    Obtener proyectos de un usuario específico
-    """
     userProjects(userId: ID!): [Project!]!
 
-    """
-    Obtener actividades de un proyecto
-    """
     projectActivities(projectId: ID!): [Activity!]!
 
-    """
-    Obtener historial de salud de un proyecto
-    """
     projectHealthHistory(projectId: ID!): [HealthRecord!]!
 
-    """
-    Obtener webhooks de un proyecto
-    """
     projectWebhooks(projectId: ID!): [Webhook!]!
   }
 
-  # =====================
-  # MUTATIONS (Modificación de datos)
-  # =====================
-  
   type Mutation {
-    """Conecta un repositorio y crea o actualiza su DevGotchi."""
     conectarRepositorio(repositoryUrl: String!): Devgotchi
 
-    """Cambia únicamente el nombre de la mascota, no el repositorio."""
     renombrarDevgotchi(projectId: ID!, nombre: String!): Devgotchi
 
-    """Vuelve a consultar GitHub y sincroniza la vida con la salud técnica."""
     analizarRepositorio(projectId: ID!): Devgotchi
 
-    """
-    Crear un nuevo usuario
-    """
     createUser(
       email: String!
       username: String!
@@ -210,9 +139,6 @@ const typeDefs = `#graphql
       fullName: String
     ): User
 
-    """
-    Actualizar un usuario
-    """
     updateUser(
       id: ID!
       email: String
@@ -221,9 +147,6 @@ const typeDefs = `#graphql
       avatarUrl: String
     ): User
 
-    """
-    Crear un nuevo proyecto
-    """
     createProject(
       userId: ID!
       name: String!
@@ -231,9 +154,6 @@ const typeDefs = `#graphql
       repositoryUrl: String
     ): Project
 
-    """
-    Actualizar un proyecto
-    """
     updateProject(
       id: ID!
       name: String
@@ -242,28 +162,16 @@ const typeDefs = `#graphql
       status: String
     ): Project
 
-    """
-    Actualizar la salud del DevGotchi
-    """
     updateDevgotchiHealth(
       projectId: ID!
       healthValue: Int!
       mood: String!
     ): Project
 
-    """
-    Cuida al DevGotchi y recupera 10 puntos de salud
-    """
     cuidarDevgotchi(projectId: ID): Devgotchi
 
-    """
-    Reduce 10 puntos de vida del DevGotchi
-    """
     disminuirVida(projectId: ID!): Project
 
-    """
-    Registrar una actividad en un proyecto
-    """
     createActivity(
       projectId: ID!
       activityType: String!
@@ -273,31 +181,19 @@ const typeDefs = `#graphql
       moodImpact: String
     ): Activity
 
-    """
-    Crear un webhook para un proyecto
-    """
     createWebhook(
       projectId: ID!
       webhookUrl: String!
       eventType: String!
     ): Webhook
 
-    """
-    Activar/desactivar un webhook
-    """
     toggleWebhook(
       id: ID!
       isActive: Boolean!
     ): Webhook
 
-    """
-    Eliminar un proyecto
-    """
     deleteProject(id: ID!): Boolean
 
-    """
-    Eliminar un usuario
-    """
     deleteUser(id: ID!): Boolean
   }
 `;

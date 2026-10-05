@@ -13,10 +13,6 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
-/**
- * Tipo Activity: Representa una actividad/evento en el proyecto
- * (commits, PRs, issues, etc)
- */
 export type Activity = {
   __typename?: 'Activity';
   activityType: Scalars['String']['output'];
@@ -31,7 +27,6 @@ export type Activity = {
   uuid: Scalars['String']['output'];
 };
 
-/** Vista compatible con el contrato del frontend de DevGotchi. */
 export type Devgotchi = {
   __typename?: 'Devgotchi';
   devgotchiHealth: Scalars['Int']['output'];
@@ -58,7 +53,6 @@ export type DiagnosticoRepositorio = {
   summary: Scalars['String']['output'];
 };
 
-/** Tipo HealthRecord: Registro histórico de salud del DevGotchi */
 export type HealthRecord = {
   __typename?: 'HealthRecord';
   createdAt: Scalars['String']['output'];
@@ -72,35 +66,20 @@ export type HealthRecord = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  /** Vuelve a consultar GitHub y sincroniza la vida con la salud técnica. */
   analizarRepositorio?: Maybe<Devgotchi>;
-  /** Conecta un repositorio y crea o actualiza su DevGotchi. */
   conectarRepositorio?: Maybe<Devgotchi>;
-  /** Registrar una actividad en un proyecto */
   createActivity?: Maybe<Activity>;
-  /** Crear un nuevo proyecto */
   createProject?: Maybe<Project>;
-  /** Crear un nuevo usuario */
   createUser?: Maybe<User>;
-  /** Crear un webhook para un proyecto */
   createWebhook?: Maybe<Webhook>;
-  /** Cuida al DevGotchi y recupera 10 puntos de salud */
   cuidarDevgotchi?: Maybe<Devgotchi>;
-  /** Eliminar un proyecto */
   deleteProject?: Maybe<Scalars['Boolean']['output']>;
-  /** Eliminar un usuario */
   deleteUser?: Maybe<Scalars['Boolean']['output']>;
-  /** Reduce 10 puntos de vida del DevGotchi */
   disminuirVida?: Maybe<Project>;
-  /** Cambia únicamente el nombre de la mascota, no el repositorio. */
   renombrarDevgotchi?: Maybe<Devgotchi>;
-  /** Activar/desactivar un webhook */
   toggleWebhook?: Maybe<Webhook>;
-  /** Actualizar la salud del DevGotchi */
   updateDevgotchiHealth?: Maybe<Project>;
-  /** Actualizar un proyecto */
   updateProject?: Maybe<Project>;
-  /** Actualizar un usuario */
   updateUser?: Maybe<User>;
 };
 
@@ -204,7 +183,6 @@ export type MutationUpdateUserArgs = {
   username?: InputMaybe<Scalars['String']['input']>;
 };
 
-/** Tipo Project: Representa un proyecto DevGotchi */
 export type Project = {
   __typename?: 'Project';
   activities: Array<Activity>;
@@ -227,23 +205,14 @@ export type Project = {
 
 export type Query = {
   __typename?: 'Query';
-  /** Devuelve el DevGotchi del primer proyecto conectado. */
   devgotchi?: Maybe<Devgotchi>;
-  /** Obtener un proyecto específico por ID */
   project?: Maybe<Project>;
-  /** Obtener actividades de un proyecto */
   projectActivities: Array<Activity>;
-  /** Obtener historial de salud de un proyecto */
   projectHealthHistory: Array<HealthRecord>;
-  /** Obtener webhooks de un proyecto */
   projectWebhooks: Array<Webhook>;
-  /** Obtener todos los proyectos */
   projects: Array<Project>;
-  /** Obtener un usuario específico por ID */
   user?: Maybe<User>;
-  /** Obtener proyectos de un usuario específico */
   userProjects: Array<Project>;
-  /** Obtener todos los usuarios del sistema */
   users: Array<User>;
 };
 
@@ -277,16 +246,13 @@ export type QueryUserProjectsArgs = {
   userId: Scalars['ID']['input'];
 };
 
-/** Estado actual de salud del repositorio conectado. */
 export type SaludRepositorio = {
   __typename?: 'SaludRepositorio';
-  /** Valores posibles: Feliz, Triste o Muerto. */
   estado: Scalars['String']['output'];
   puntosVida: Scalars['Int']['output'];
   ultimoCommit?: Maybe<Scalars['String']['output']>;
 };
 
-/** Tipo User: Representa un usuario del sistema */
 export type User = {
   __typename?: 'User';
   avatarUrl?: Maybe<Scalars['String']['output']>;
@@ -310,7 +276,6 @@ export type VerificacionRepositorio = {
   status: Scalars['String']['output'];
 };
 
-/** Tipo Webhook: Configuración de webhooks para un proyecto */
 export type Webhook = {
   __typename?: 'Webhook';
   createdAt: Scalars['String']['output'];

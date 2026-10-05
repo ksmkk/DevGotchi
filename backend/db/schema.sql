@@ -1,8 +1,6 @@
--- Habilitar extensiones necesarias
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
--- Tabla de Usuarios
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
@@ -11,12 +9,11 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   full_name VARCHAR(255),
   avatar_url VARCHAR(500),
-  status VARCHAR(50) DEFAULT 'active', -- active, inactive, banned
+  status VARCHAR(50) DEFAULT 'active',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Proyectos
 CREATE TABLE IF NOT EXISTS projects (
   id SERIAL PRIMARY KEY,
   uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
@@ -28,40 +25,37 @@ CREATE TABLE IF NOT EXISTS projects (
   repository_analysis TEXT,
   last_analysis_at TIMESTAMP,
   is_current BOOLEAN DEFAULT FALSE,
-  status VARCHAR(50) DEFAULT 'active', -- active, archived, deleted
-  devgotchi_health INTEGER DEFAULT 100, -- salud del devgotchi (0-100)
-  devgotchi_mood VARCHAR(50) DEFAULT 'neutral', -- happy, sad, neutral, angry
+  status VARCHAR(50) DEFAULT 'active',
+  devgotchi_health INTEGER DEFAULT 100,
+  devgotchi_mood VARCHAR(50) DEFAULT 'neutral',
   last_commit_date TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Webhooks
 CREATE TABLE IF NOT EXISTS webhooks (
   id SERIAL PRIMARY KEY,
   uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
   project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   webhook_url VARCHAR(500) NOT NULL,
-  event_type VARCHAR(100) NOT NULL, -- push, pull_request, issue, etc
+  event_type VARCHAR(100) NOT NULL,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Actividades (eventos del Devgotchi)
 CREATE TABLE IF NOT EXISTS activities (
   id SERIAL PRIMARY KEY,
   uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
   project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  activity_type VARCHAR(100) NOT NULL, -- commit, pr_opened, pr_closed, issue, etc
+  activity_type VARCHAR(100) NOT NULL,
   description TEXT,
-  metadata JSONB, -- datos adicionales en formato JSON
-  health_impact INTEGER DEFAULT 0, -- cambio en salud (-10 a 10)
-  mood_impact VARCHAR(50), -- impacto en el mood
+  metadata JSONB,
+  health_impact INTEGER DEFAULT 0,
+  mood_impact VARCHAR(50),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla de Historial de Estado
 CREATE TABLE IF NOT EXISTS health_history (
   id SERIAL PRIMARY KEY,
   uuid UUID DEFAULT uuid_generate_v4() UNIQUE NOT NULL,
@@ -71,7 +65,6 @@ CREATE TABLE IF NOT EXISTS health_history (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Índices para optimizar búsquedas
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_webhooks_project_id ON webhooks(project_id);
@@ -81,7 +74,6 @@ CREATE INDEX IF NOT EXISTS idx_health_history_project_id ON health_history(proje
 CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 
--- Triggers para actualizar updated_at automáticamente
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
