@@ -46,7 +46,12 @@ test('penaliza tests ausentes, CI fallido, .env rastreado y falta de .gitignore'
     'No se encontraron archivos de pruebas.',
     'Archivos sensibles rastreados: .env.',
   ]));
-  expect(result.checks.find((item) => item.key === 'secrets').status).toBe('unknown');
+  expect(result.checks.find((item) => item.key === 'secrets')).toMatchObject({
+    status: 'warning',
+    source: 'DevGotchi',
+    impact: 0,
+  });
+  expect(result.checks.find((item) => item.key === 'buckets').status).toBe('not_applicable');
 });
 
 test('valida URLs de repositorios GitHub', () => {

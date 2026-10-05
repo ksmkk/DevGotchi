@@ -14,6 +14,7 @@ const statusLabel = {
   warning: "Atención",
   critical: "Crítico",
   unknown: "No verificable",
+  not_applicable: "No aplica",
 } as const;
 
 export function RepositoryReport({ diagnosis, error, loading, onRefresh }: RepositoryReportProps) {
@@ -43,6 +44,7 @@ export function RepositoryReport({ diagnosis, error, loading, onRefresh }: Repos
                   <span>{statusLabel[item.status as keyof typeof statusLabel] ?? item.status}</span>
                 </div>
                 <p>{item.detail}</p>
+                <small className="report-check__source">Fuente: {item.source}</small>
               </li>
             ))}
           </ul>

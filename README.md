@@ -1,6 +1,6 @@
 # DevGotchi
 
-DevGotchi es una aplicación monolítica para observar la salud técnica de un repositorio de GitHub mediante una mascota virtual. El frontend React consume el contrato GraphQL del backend Node.js; el backend analiza señales reales del repositorio, calcula un puntaje, persiste el estado y recibe eventos por REST.
+DevGotchi es una aplicación monolítica para observar la salud técnica de un repositorio de GitHub mediante una mascota virtual. Un único servicio Node.js entrega la interfaz React, expone GraphQL y REST, analiza señales reales del repositorio y persiste el estado.
 
 ## Arquitectura y stack
 
@@ -10,14 +10,17 @@ El repositorio contiene un único producto desplegable y versionado en conjunto:
 - `backend/src/`: API Express, Apollo Server, GraphQL, REST, OAuth, webhooks y cron.
 - `backend/db/`: acceso e inicialización compatible con SQLite y PostgreSQL.
 - `.github/workflows/ci.yml`: verificación automática del monolito.
-- `docker-compose.yml`: backend dockerizado y PostgreSQL.
+- `Dockerfile`: compilación multietapa del frontend y empaquetado con el backend.
+- `docker-compose.yml`: monolito dockerizado y PostgreSQL.
 
 Tecnologías: Node.js 22, React, TypeScript, Vite, Express, Apollo Server, GraphQL, PostgreSQL, SQLite, Jest y Vitest.
 
 ```mermaid
 flowchart LR
-  GitHub[GitHub API / OAuth / Webhooks] -->|HTTPS + HMAC| API[Backend Express + Apollo]
-  UI[React + Vite] -->|GraphQL| API
+  User[Usuario] --> App[Monolito Node.js]
+  GitHub[GitHub API / OAuth / Webhooks] -->|HTTPS + HMAC| App
+  App --> UI[React compilado]
+  App --> API[Express + Apollo]
   API --> Engine[Motor de diagnóstico]
   Cron[Reanálisis cada hora] --> Engine
   Engine --> DB[(SQLite local o PostgreSQL)]
@@ -59,7 +62,7 @@ curl -X POST http://127.0.0.1:3000/graphql \
   -d '{"query":"query { devgotchi { id nombre vida_actual repository_url } }"}'
 ```
 
-## Backend dockerizado con PostgreSQL
+## Monolito dockerizado con PostgreSQL
 
 Desde la raíz, opcionalmente copia `.env.example` como `.env` y luego ejecuta:
 
@@ -67,7 +70,7 @@ Desde la raíz, opcionalmente copia `.env.example` como `.env` y luego ejecuta:
 docker compose up --build
 ```
 
-Compose construye `backend/Dockerfile` sobre Node.js 22 Alpine, instala con `npm ci --omit=dev`, espera el healthcheck de PostgreSQL y expone el backend en `http://127.0.0.1:3000`. El backend se conecta al host interno `postgres`, nunca a `localhost`, e inicializa el esquema automáticamente. PostgreSQL y el almacén cifrado OAuth usan volúmenes persistentes.
+Compose construye el `Dockerfile` de la raíz sobre Node.js 22 Alpine. La primera etapa compila React y la segunda empaqueta esos archivos junto con Express, Apollo y la lógica de negocio. El único servicio queda disponible en `http://127.0.0.1:3000`, se conecta al host interno `postgres` e inicializa el esquema automáticamente. PostgreSQL y el almacén cifrado OAuth usan volúmenes persistentes.
 
 Comprobación:
 
@@ -107,7 +110,7 @@ No versionar archivos `.env`. Los ejemplos seguros son `.env.example`, `backend/
 
 ### Diagnóstico y motor de salud
 
-Al conectar o actualizar un repositorio, el backend consulta GitHub para detectar tests, configuración de coverage, workflows versionados y ejecuciones recientes, `.gitignore`, archivos `.env` rastreados y señales de seguridad cuando hay permisos. Cada hallazgo produce un estado, impacto y recomendación. El puntaje final de 0 a 100 se convierte en la vida y el ánimo de la mascota. Los resultados se guardan para evitar llamadas innecesarias durante cinco minutos.
+Al conectar o actualizar un repositorio, el backend consulta GitHub para detectar tests, configuración de coverage, workflows versionados y ejecuciones recientes, `.gitignore` y archivos `.env` rastreados. Además descarga de forma pasiva un máximo de 60 archivos de texto de hasta 180 KiB para buscar credenciales redactadas, patrones inseguros, dependencias de riesgo e IaC con almacenamiento público. Secret Scanning y Code Scanning complementan el resultado cuando están disponibles, pero ya no son obligatorios. Cada hallazgo informa su fuente, estado, impacto y recomendación. El puntaje final de 0 a 100 se convierte en la vida y el ánimo de la mascota. Los resultados se guardan para evitar llamadas innecesarias durante cinco minutos.
 
 El cron ejecuta un reanálisis técnico cada hora (`0 * * * *`) para proyectos activos. No aplica una pérdida arbitraria de vida: vuelve a consultar las señales del repositorio y sincroniza puntaje, ánimo, informe y fecha.
 
@@ -120,6 +123,8 @@ El cron ejecuta un reanálisis técnico cada hora (`0 * * * *`) para proyectos a
 ### OAuth y seguridad
 
 El flujo OAuth usa Authorization Code, `state` firmado, PKCE S256 y cookie `HttpOnly`/`SameSite=Lax`. Solicita `read:user repo:status write:repo_hook`, necesarios para identificar al usuario, leer estados y registrar el webhook. Las credenciales reales nunca son necesarias para tests o demo local. Cuando se conecta un repositorio, access y refresh tokens quedan cifrados con AES-256-GCM en el backend; no se envían al navegador.
+
+En modo local, el backend crea una identidad estable por navegador mediante la cookie `devgotchi_session`, también `HttpOnly` y firmada. Proyectos, proyecto actual, mascota, historial, actividades y webhooks se filtran por esa identidad. La migración agrega índices únicos parciales para impedir más de un proyecto actual y más de una copia de la misma URL por usuario. En producción se recomienda definir `SESSION_SECRET`; sin él, las sesiones locales se regeneran al reiniciar el proceso.
 
 ## Pruebas y calidad
 

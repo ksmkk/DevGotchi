@@ -63,6 +63,8 @@ CREATE TABLE IF NOT EXISTS health_history (
 );
 
 CREATE INDEX IF NOT EXISTS idx_projects_user_id ON projects(user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_one_current_per_user ON projects(user_id) WHERE is_current = 1;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_projects_user_repository ON projects(user_id, repository_url) WHERE repository_url IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 CREATE INDEX IF NOT EXISTS idx_webhooks_project_id ON webhooks(project_id);
 CREATE INDEX IF NOT EXISTS idx_activities_project_id ON activities(project_id);

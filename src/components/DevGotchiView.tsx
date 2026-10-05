@@ -37,6 +37,12 @@ const speciesDetails: Record<PetSpecies, { icon: string; label: string; greeting
   platypus: { icon: "🦆", label: "Ornitorrinco", greeting: "listo para explorar tus commits" },
 };
 
+const speciesFood: Record<PetSpecies, { icon: string; name: string }> = {
+  dog: { icon: "🦴", name: "huesito" },
+  cat: { icon: "🐟", name: "pescadito" },
+  platypus: { icon: "🔋", name: "batería de código" },
+};
+
 const petSpeciesStorageKey = "devgotchi-pet-species";
 
 const clampLife = (value: number) => Math.min(100, Math.max(0, value));
@@ -207,7 +213,11 @@ export function DevGotchiView({
         <span className="health-chip">Nivel {life}</span>
       </header>
 
-      <div className="pet-stage" aria-live="polite" onClick={movePetToClick}>
+      <div className={`pet-stage pet-stage--${species}`} aria-live="polite" onClick={movePetToClick}>
+        <div className="pet-stage__wordmark" aria-hidden="true">
+          <span>{species === "dog" ? "GOOD" : species === "cat" ? "CODE" : "DEV"}</span>
+          <span>{species === "dog" ? "DOG" : species === "cat" ? "CAT" : "GOTCHI"}</span>
+        </div>
         <div className="pet-stage__sky" aria-hidden="true">
           <span className="pet-stage__cloud pet-stage__cloud--one" />
           <span className="pet-stage__cloud pet-stage__cloud--two" />
@@ -286,10 +296,10 @@ export function DevGotchiView({
           <button
             type="button"
             className="pet-control pet-control--feed"
-            onClick={() => interact("feeding", `¡Ñam! ${devgotchi.nombre} disfrutó su snack.`)}
+            onClick={() => interact("feeding", `¡Ñam! ${devgotchi.nombre} disfrutó su ${speciesFood[species].name}.`)}
             aria-pressed={activity === "feeding"}
           >
-            <span className="pet-control__icon" aria-hidden="true">🍎</span>
+            <span className="pet-control__icon" aria-hidden="true">{speciesFood[species].icon}</span>
             <strong>Alimentar</strong>
             <small>Recupera energía</small>
           </button>

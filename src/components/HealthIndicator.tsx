@@ -30,7 +30,7 @@ const healthDetails: Record<
   },
 };
 
-function Dog() {
+function Dog({ health }: { health: HealthStatus }) {
   return (
     <svg className="pet-character pet-svg dog" viewBox="0 0 220 220" aria-hidden="true">
       <defs>
@@ -59,14 +59,24 @@ function Dog() {
         <path d="M54 77c0-34 23-57 58-57s58 23 58 57-20 59-58 59S54 111 54 77z" fill="url(#dog-fur)" stroke="#65402d" strokeWidth="4" />
         <path d="M124 23c27 4 42 23 43 45-22 7-41-2-47-20-3-9-1-18 4-25z" fill="#a75f3d" opacity=".9" />
         <path d="M72 45c8-12 19-18 31-20" fill="none" stroke="#ffe1b1" strokeWidth="7" strokeLinecap="round" opacity=".72" />
-        <g className="pet-svg__eyes">
-          <ellipse cx="87" cy="77" rx="9" ry="12" fill="#3b2921" /><ellipse cx="137" cy="77" rx="9" ry="12" fill="#3b2921" />
-          <circle cx="84" cy="73" r="3" fill="white" /><circle cx="134" cy="73" r="3" fill="white" />
-        </g>
+        {health === "critical" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--critical" stroke="#3b2921" strokeWidth="5" strokeLinecap="round">
+            <path d="M80 70l14 14m0-14L80 84m50-14 14 14m0-14-14 14" />
+          </g>
+        ) : health === "warning" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--warning" fill="none" stroke="#3b2921" strokeWidth="5" strokeLinecap="round">
+            <path d="M78 80q9-9 18 0m32 0q9-9 18 0" />
+          </g>
+        ) : (
+          <g className="pet-svg__eyes">
+            <ellipse cx="87" cy="77" rx="9" ry="12" fill="#3b2921" /><ellipse cx="137" cy="77" rx="9" ry="12" fill="#3b2921" />
+            <circle cx="84" cy="73" r="3" fill="white" /><circle cx="134" cy="73" r="3" fill="white" />
+          </g>
+        )}
         <ellipse cx="112" cy="104" rx="30" ry="23" fill="#fff1d7" />
         <path d="M101 95c1-8 21-8 22 0 0 7-6 10-11 10s-11-3-11-10z" fill="#3c2922" />
-        <path d="M112 105v5m0 0c-9 0-11 8-16 7m16-7c9 0 11 8 16 7" fill="none" stroke="#684234" strokeWidth="3" strokeLinecap="round" />
-        <path className="pet-svg__tongue" d="M104 116h16v8c0 9-16 9-16 0z" fill="#ed8290" stroke="#8f4853" strokeWidth="2" />
+        <path d={health === "healthy" ? "M112 105v5m0 0c-9 0-11 8-16 7m16-7c9 0 11 8 16 7" : health === "warning" ? "M112 105v7m-12 8q12-8 24 0" : "M112 105v7m-14 12q14-12 28 0"} fill="none" stroke="#684234" strokeWidth="3" strokeLinecap="round" />
+        {health === "healthy" ? <path className="pet-svg__tongue" d="M104 116h16v8c0 9-16 9-16 0z" fill="#ed8290" stroke="#8f4853" strokeWidth="2" /> : null}
         <path d="M70 119c22 12 62 12 84 0" fill="none" stroke="#2f6f63" strokeWidth="10" strokeLinecap="round" />
         <circle cx="112" cy="130" r="13" fill="#ffd75e" stroke="#65402d" strokeWidth="3" />
         <text x="112" y="135" textAnchor="middle" fill="#a84055" fontSize="12" fontWeight="900">♥</text>
@@ -75,7 +85,7 @@ function Dog() {
   );
 }
 
-function Cat() {
+function Cat({ health }: { health: HealthStatus }) {
   return (
     <svg className="pet-character pet-svg cat" viewBox="0 0 220 220" aria-hidden="true">
       <defs><linearGradient id="cat-fur" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#d4d0df" /><stop offset="1" stopColor="#8c879d" /></linearGradient></defs>
@@ -93,9 +103,15 @@ function Cat() {
         <path d="M53 78c0-34 24-56 59-56s59 22 59 56-21 58-59 58-59-24-59-58z" fill="url(#cat-fur)" stroke="#4e4655" strokeWidth="4" />
         <path d="M102 24l3 26m15-26-3 26M82 31l11 22m49-22-11 22" stroke="#756f82" strokeWidth="6" strokeLinecap="round" />
         <path d="M70 49c8-11 18-17 29-19" fill="none" stroke="white" strokeWidth="6" strokeLinecap="round" opacity=".42" />
-        <g className="pet-svg__eyes"><path d="M76 75c6-11 20-11 26 0-5 13-21 13-26 0zM122 75c6-11 20-11 26 0-5 13-21 13-26 0z" fill="#d9d35e" stroke="#4e4655" strokeWidth="3" /><path d="M89 68v15m46-15v15" stroke="#242329" strokeWidth="4" strokeLinecap="round" /><circle cx="85" cy="72" r="2" fill="white" /><circle cx="131" cy="72" r="2" fill="white" /></g>
+        {health === "critical" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--critical" stroke="#4e4655" strokeWidth="5" strokeLinecap="round"><path d="M80 69l16 15m0-15L80 84m48-15 16 15m0-15-16 15" /></g>
+        ) : health === "warning" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--warning" fill="none" stroke="#4e4655" strokeWidth="5" strokeLinecap="round"><path d="M77 80q12-10 24 0m23 0q12-10 24 0" /></g>
+        ) : (
+          <g className="pet-svg__eyes"><path d="M76 75c6-11 20-11 26 0-5 13-21 13-26 0zM122 75c6-11 20-11 26 0-5 13-21 13-26 0z" fill="#d9d35e" stroke="#4e4655" strokeWidth="3" /><path d="M89 68v15m46-15v15" stroke="#242329" strokeWidth="4" strokeLinecap="round" /><circle cx="85" cy="72" r="2" fill="white" /><circle cx="131" cy="72" r="2" fill="white" /></g>
+        )}
         <ellipse cx="112" cy="104" rx="27" ry="20" fill="#f1eef3" /><path d="M105 94c2-6 13-6 15 0-1 6-5 8-8 8s-7-2-7-8z" fill="#bc6e7c" />
-        <path d="M112 102v6m0 0c-7 0-9 6-13 6m13-6c7 0 9 6 13 6" fill="none" stroke="#5a4651" strokeWidth="2.5" strokeLinecap="round" />
+        <path d={health === "healthy" ? "M112 102v6m0 0c-7 0-9 6-13 6m13-6c7 0 9 6 13 6" : health === "warning" ? "M112 102v7m-11 9q11-7 22 0" : "M112 102v7m-13 13q13-11 26 0"} fill="none" stroke="#5a4651" strokeWidth="2.5" strokeLinecap="round" />
         <g className="pet-svg__whiskers" fill="none" stroke="#5c535f" strokeWidth="2" strokeLinecap="round"><path d="M91 103L48 95m43 15-45 7m87-14 43-8m-43 15 45 7" /></g>
         <path d="M72 119c23 11 57 11 80 0" fill="none" stroke="#c95f79" strokeWidth="9" strokeLinecap="round" /><circle cx="112" cy="129" r="12" fill="#f6d45e" stroke="#4e4655" strokeWidth="3" /><text x="112" y="134" textAnchor="middle" fill="#a84055" fontSize="12" fontWeight="900">♥</text>
       </g>
@@ -139,12 +155,12 @@ export function HealthIndicator({
         <span className="pet-effect pet-effect--three">♥</span>
       </div>
 
-      {species === "dog" ? <Dog /> : null}
-      {species === "cat" ? <Cat /> : null}
+      {species === "dog" ? <Dog health={health} /> : null}
+      {species === "cat" ? <Cat health={health} /> : null}
       {species === "platypus" ? <Platypus /> : null}
 
       <div className="pet-prop pet-prop--bowl" aria-hidden="true">
-        <span className="pet-prop__food" />
+        <span className="pet-prop__food">{species === "dog" ? "🦴" : species === "cat" ? "🐟" : "🔋"}</span>
       </div>
       <div className="pet-prop pet-prop--ball" aria-hidden="true">
         <span />
@@ -164,6 +180,9 @@ export function HealthIndicator({
         <circle className="water-speck water-speck--right" cx="105" cy="39" r="3.5" />
       </svg>
       <div className="pet-scan" aria-hidden="true"><span /></div>
+      <div className="play-burst" aria-hidden="true">
+        <span>✦</span><span>★</span><span>✦</span><span>●</span><span>★</span>
+      </div>
       <span className="health-indicator__label">{details.label}</span>
     </div>
   );

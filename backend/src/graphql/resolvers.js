@@ -17,8 +17,15 @@ async function hashPassword(password) {
   return `scrypt$${salt.toString('base64url')}$${derivedKey.toString('base64url')}`;
 }
 
-const getOrCreateRepositoryOwner = async (db) => {
-  const existingUser = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
+const getOrCreateRepositoryOwner = async (db, sessionId) => {
+  const identitySuffix = sessionId
+    ? require('node:crypto').createHash('sha256').update(sessionId).digest('hex').slice(0, 24)
+    : null;
+  const email = identitySuffix ? `local+${identitySuffix}@devgotchi.invalid` : LOCAL_USER_EMAIL;
+  const username = identitySuffix ? `devgotchi-${identitySuffix}` : LOCAL_USERNAME;
+  const existingUser = sessionId
+    ? await db.query('SELECT id FROM users WHERE email = $1 LIMIT 1', [email])
+    : await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
   if (existingUser.rows.length > 0) {
     return existingUser.rows[0].id;
   }
@@ -28,16 +35,16 @@ const getOrCreateRepositoryOwner = async (db) => {
      VALUES ($1, $2, $3, $4, $5)
      ON CONFLICT DO NOTHING
      RETURNING id`,
-    [randomUUID(), LOCAL_USER_EMAIL, LOCAL_USERNAME, randomUUID(), 'Usuario local'],
+    [randomUUID(), email, username, randomUUID(), 'Usuario local'],
   );
 
   if (createdUser.rows.length > 0) {
     return createdUser.rows[0].id;
   }
 
-  const concurrentlyCreatedUser = await db.query(
-    'SELECT id FROM users ORDER BY id ASC LIMIT 1',
-  );
+  const concurrentlyCreatedUser = sessionId
+    ? await db.query('SELECT id FROM users WHERE email = $1 LIMIT 1', [email])
+    : await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
   if (concurrentlyCreatedUser.rows.length === 0) {
     throw new Error('No se pudo preparar el usuario local');
   }
@@ -100,6 +107,7 @@ async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = 
         status: 'unknown',
         detail: 'El repositorio es privado o no está disponible. Configura GITHUB_TOKEN u OAuth con acceso de lectura.',
         impact: 0,
+        source: 'GitHub',
       }],
       recommendations: [
         'Conecta GitHub con permisos de lectura para habilitar tests, CI/CD y alertas de seguridad.',
@@ -117,18 +125,31 @@ async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = 
   }
 }
 
-async function markCurrentProject(db, project) {
+async function markCurrentProject(db, project, userId) {
+  if (userId) {
+    await db.query('UPDATE projects SET is_current = false WHERE user_id = $1', [userId]);
+    const selected = await db.query(
+      `UPDATE projects SET is_current = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND user_id = $2 RETURNING *`,
+      [project.id, userId],
+    );
+    return selected.rows[0] || project;
+  }
   const result = await db.query(
     `UPDATE projects
      SET is_current = CASE WHEN id = $1 THEN true ELSE false END,
          updated_at = CASE WHEN id = $1 THEN CURRENT_TIMESTAMP ELSE updated_at END
+     ${userId ? 'WHERE user_id = $2' : ''}
      RETURNING *`,
-    [project.id],
+    userId ? [project.id, userId] : [project.id],
   );
   return result?.rows?.find((row) => String(row.id) === String(project.id)) || project;
 }
 
 const resolvers = {
+  VerificacionRepositorio: {
+    source: (verification) => verification.source || 'DevGotchi',
+  },
   Devgotchi: {
     salud: (devgotchi) => {
       const puntosVida = devgotchi.vida_actual ?? devgotchi.devgotchiHealth;
@@ -142,21 +163,25 @@ const resolvers = {
     },
   },
   Query: {
-    devgotchi: async (_, __, { db, repositoryAnalyzer }) => {
+    devgotchi: async (_, __, context) => {
+      const { db, repositoryAnalyzer, sessionId } = context;
+      const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
       const result = await db.query(
         `SELECT * FROM projects
+         ${userId ? 'WHERE user_id = $1' : ''}
          ORDER BY CASE WHEN is_current THEN 0 ELSE 1 END, updated_at DESC, id DESC
-         LIMIT 1`,
+         LIMIT 1`, userId ? [userId] : [],
       );
       if (result.rows.length === 0) return null;
       const project = await refreshRepositoryHealth(result.rows[0], db, repositoryAnalyzer);
       return formatProject(project);
     },
 
-    users: async (_, __, { db }) => {
+    users: async (_, __, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM users ORDER BY created_at DESC';
-        const result = await db.query(query);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId ? 'SELECT * FROM users WHERE id = $1' : 'SELECT * FROM users ORDER BY created_at DESC';
+        const result = await db.query(query, userId ? [userId] : []);
         return result.rows.map(formatUser);
       } catch (error) {
         console.error('Error fetching users:', error);
@@ -164,10 +189,11 @@ const resolvers = {
       }
     },
 
-    user: async (_, { id }, { db }) => {
+    user: async (_, { id }, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM users WHERE id = $1';
-        const result = await db.query(query, [id]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (userId && String(userId) !== String(id)) return null;
+        const result = await db.query('SELECT * FROM users WHERE id = $1', [id]);
         if (result.rows.length === 0) return null;
         return formatUser(result.rows[0]);
       } catch (error) {
@@ -176,10 +202,13 @@ const resolvers = {
       }
     },
 
-    projects: async (_, __, { db }) => {
+    projects: async (_, __, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM projects ORDER BY created_at DESC';
-        const result = await db.query(query);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId
+          ? 'SELECT * FROM projects WHERE user_id = $1 ORDER BY created_at DESC'
+          : 'SELECT * FROM projects ORDER BY created_at DESC';
+        const result = await db.query(query, userId ? [userId] : []);
         return result.rows.map(formatProject);
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -187,10 +216,11 @@ const resolvers = {
       }
     },
 
-    project: async (_, { id }, { db }) => {
+    project: async (_, { id }, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM projects WHERE id = $1';
-        const result = await db.query(query, [id]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId ? 'SELECT * FROM projects WHERE id = $1 AND user_id = $2' : 'SELECT * FROM projects WHERE id = $1';
+        const result = await db.query(query, userId ? [id, userId] : [id]);
         if (result.rows.length === 0) return null;
         return formatProject(result.rows[0]);
       } catch (error) {
@@ -199,8 +229,10 @@ const resolvers = {
       }
     },
 
-    userProjects: async (_, { userId }, { db }) => {
+    userProjects: async (_, { userId }, { db, sessionId }) => {
       try {
+        const viewerId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (viewerId && String(viewerId) !== String(userId)) return [];
         const query = 'SELECT * FROM projects WHERE user_id = $1 ORDER BY created_at DESC';
         const result = await db.query(query, [userId]);
         return result.rows.map(formatProject);
@@ -210,10 +242,14 @@ const resolvers = {
       }
     },
 
-    projectActivities: async (_, { projectId }, { db }) => {
+    projectActivities: async (_, { projectId }, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM activities WHERE project_id = $1 ORDER BY created_at DESC';
-        const result = await db.query(query, [projectId]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId
+          ? `SELECT activities.* FROM activities JOIN projects ON projects.id = activities.project_id
+             WHERE activities.project_id = $1 AND projects.user_id = $2 ORDER BY activities.created_at DESC`
+          : 'SELECT * FROM activities WHERE project_id = $1 ORDER BY created_at DESC';
+        const result = await db.query(query, userId ? [projectId, userId] : [projectId]);
         return result.rows.map(formatActivity);
       } catch (error) {
         console.error('Error fetching activities:', error);
@@ -221,10 +257,14 @@ const resolvers = {
       }
     },
 
-    projectHealthHistory: async (_, { projectId }, { db }) => {
+    projectHealthHistory: async (_, { projectId }, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM health_history WHERE project_id = $1 ORDER BY created_at DESC';
-        const result = await db.query(query, [projectId]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId
+          ? `SELECT health_history.* FROM health_history JOIN projects ON projects.id = health_history.project_id
+             WHERE health_history.project_id = $1 AND projects.user_id = $2 ORDER BY health_history.created_at DESC`
+          : 'SELECT * FROM health_history WHERE project_id = $1 ORDER BY created_at DESC';
+        const result = await db.query(query, userId ? [projectId, userId] : [projectId]);
         return result.rows.map(formatHealthRecord);
       } catch (error) {
         console.error('Error fetching health history:', error);
@@ -232,10 +272,14 @@ const resolvers = {
       }
     },
 
-    projectWebhooks: async (_, { projectId }, { db }) => {
+    projectWebhooks: async (_, { projectId }, { db, sessionId }) => {
       try {
-        const query = 'SELECT * FROM webhooks WHERE project_id = $1 ORDER BY created_at DESC';
-        const result = await db.query(query, [projectId]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId
+          ? `SELECT webhooks.* FROM webhooks JOIN projects ON projects.id = webhooks.project_id
+             WHERE webhooks.project_id = $1 AND projects.user_id = $2 ORDER BY webhooks.created_at DESC`
+          : 'SELECT * FROM webhooks WHERE project_id = $1 ORDER BY created_at DESC';
+        const result = await db.query(query, userId ? [projectId, userId] : [projectId]);
         return result.rows.map(formatWebhook);
       } catch (error) {
         console.error('Error fetching webhooks:', error);
@@ -245,50 +289,58 @@ const resolvers = {
   },
 
   Mutation: {
-    conectarRepositorio: async (_, { repositoryUrl }, { db, repositoryAnalyzer }) => {
+    conectarRepositorio: async (_, { repositoryUrl }, { db, repositoryAnalyzer, sessionId }) => {
       const normalizedRepositoryUrl = normalizeRepositoryUrl(repositoryUrl);
+      const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
       const existing = await db.query(
-        'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
-        [normalizedRepositoryUrl],
+        userId
+          ? 'SELECT * FROM projects WHERE repository_url = $1 AND user_id = $2 LIMIT 1'
+          : 'SELECT * FROM projects WHERE repository_url = $1 LIMIT 1',
+        userId ? [normalizedRepositoryUrl, userId] : [normalizedRepositoryUrl],
       );
 
       if (existing.rows.length > 0) {
-        const selectedProject = await markCurrentProject(db, existing.rows[0]);
+        const selectedProject = await markCurrentProject(db, existing.rows[0], userId);
         const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
         return formatProject(project);
       }
 
-      const userId = await getOrCreateRepositoryOwner(db);
+      const ownerId = userId || await getOrCreateRepositoryOwner(db);
 
       const name = normalizedRepositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
       const result = await db.query(
         `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
          VALUES ($1, $2, $3, $4, 100, 'neutral')
          RETURNING *`,
-        [randomUUID(), userId, name, normalizedRepositoryUrl],
+        [randomUUID(), ownerId, name, normalizedRepositoryUrl],
       );
 
-      const selectedProject = await markCurrentProject(db, result.rows[0]);
+      const selectedProject = await markCurrentProject(db, result.rows[0], userId);
       const project = await refreshRepositoryHealth(selectedProject, db, repositoryAnalyzer, true);
       return formatProject(project);
     },
 
-    renombrarDevgotchi: async (_, { projectId, nombre }, { db }) => {
+    renombrarDevgotchi: async (_, { projectId, nombre }, { db, sessionId }) => {
       const normalizedName = String(nombre || '').trim();
       if (normalizedName.length < 1 || normalizedName.length > 40) {
         throw new Error('El nombre debe tener entre 1 y 40 caracteres');
       }
+      const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
       const result = await db.query(
         `UPDATE projects SET pet_name = $1, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2 RETURNING *`,
-        [normalizedName, projectId],
+         WHERE id = $2 ${userId ? 'AND user_id = $3' : ''} RETURNING *`,
+        userId ? [normalizedName, projectId, userId] : [normalizedName, projectId],
       );
       if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
       return formatProject(result.rows[0]);
     },
 
-    analizarRepositorio: async (_, { projectId }, { db, repositoryAnalyzer }) => {
-      const result = await db.query('SELECT * FROM projects WHERE id = $1', [projectId]);
+    analizarRepositorio: async (_, { projectId }, { db, repositoryAnalyzer, sessionId }) => {
+      const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+      const result = await db.query(
+        userId ? 'SELECT * FROM projects WHERE id = $1 AND user_id = $2' : 'SELECT * FROM projects WHERE id = $1',
+        userId ? [projectId, userId] : [projectId],
+      );
       if (result.rows.length === 0) throw new Error('Proyecto no encontrado');
       const project = await refreshRepositoryHealth(
         result.rows[0],
@@ -315,8 +367,10 @@ const resolvers = {
       }
     },
 
-    updateUser: async (_, { id, email, username, fullName, avatarUrl }, { db }) => {
+    updateUser: async (_, { id, email, username, fullName, avatarUrl }, { db, sessionId }) => {
       try {
+        const viewerId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (viewerId && String(viewerId) !== String(id)) throw new Error('Usuario no autorizado');
         const updates = [];
         const values = [];
         let paramCount = 1;
@@ -358,8 +412,10 @@ const resolvers = {
       }
     },
 
-    createProject: async (_, { userId, name, description, repositoryUrl }, { db }) => {
+    createProject: async (_, { userId, name, description, repositoryUrl }, { db, sessionId }) => {
       try {
+        const viewerId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (viewerId && String(viewerId) !== String(userId)) throw new Error('Usuario no autorizado');
         const query = `
           INSERT INTO projects (uuid, user_id, name, description, repository_url, devgotchi_health, devgotchi_mood)
           VALUES ($1, $2, $3, $4, $5, 100, 'neutral')
@@ -373,7 +429,7 @@ const resolvers = {
       }
     },
 
-    updateProject: async (_, { id, name, description, repositoryUrl, status }, { db }) => {
+    updateProject: async (_, { id, name, description, repositoryUrl, status }, { db, sessionId }) => {
       try {
         const updates = [];
         const values = [];
@@ -401,10 +457,12 @@ const resolvers = {
         }
 
         values.push(id);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (userId) values.push(userId);
         const query = `
           UPDATE projects
           SET ${updates.join(', ')}
-          WHERE id = $${paramCount}
+          WHERE id = $${paramCount}${userId ? ` AND user_id = $${paramCount + 1}` : ''}
           RETURNING *
         `;
         const result = await db.query(query, values);
@@ -416,17 +474,20 @@ const resolvers = {
       }
     },
 
-    updateDevgotchiHealth: async (_, { projectId, healthValue, mood }, { db }) => {
+    updateDevgotchiHealth: async (_, { projectId, healthValue, mood }, { db, sessionId }) => {
       try {
         const clampedHealth = Math.max(0, Math.min(100, healthValue));
 
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
         const updateProjectQuery = `
           UPDATE projects
           SET devgotchi_health = $1, devgotchi_mood = $2
-          WHERE id = $3
+          WHERE id = $3 ${userId ? 'AND user_id = $4' : ''}
           RETURNING *
         `;
-        const projectResult = await db.query(updateProjectQuery, [clampedHealth, mood, projectId]);
+        const projectResult = await db.query(updateProjectQuery, userId
+          ? [clampedHealth, mood, projectId, userId]
+          : [clampedHealth, mood, projectId]);
         if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
 
         const insertHistoryQuery = `
@@ -442,12 +503,17 @@ const resolvers = {
       }
     },
 
-    cuidarDevgotchi: async (_, { projectId }, { db }) => {
+    cuidarDevgotchi: async (_, { projectId }, { db, sessionId }) => {
       try {
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
         const projectQuery = projectId
-          ? 'SELECT id, devgotchi_health FROM projects WHERE id = $1'
-          : 'SELECT id, devgotchi_health FROM projects ORDER BY id ASC LIMIT 1';
-        const projectResult = await db.query(projectQuery, projectId ? [projectId] : []);
+          ? `SELECT id, devgotchi_health FROM projects WHERE id = $1 ${userId ? 'AND user_id = $2' : ''}`
+          : `SELECT id, devgotchi_health FROM projects ${userId ? 'WHERE user_id = $1' : ''}
+             ORDER BY CASE WHEN is_current THEN 0 ELSE 1 END, id ASC LIMIT 1`;
+        const projectParams = projectId
+          ? (userId ? [projectId, userId] : [projectId])
+          : (userId ? [userId] : []);
+        const projectResult = await db.query(projectQuery, projectParams);
         if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
 
         const currentHealth = projectResult.rows[0].devgotchi_health;
@@ -456,10 +522,11 @@ const resolvers = {
         const updateProjectQuery = `
           UPDATE projects
           SET devgotchi_health = $1, devgotchi_mood = 'happy'
-          WHERE id = $2
+          WHERE id = $2 ${userId ? 'AND user_id = $3' : ''}
           RETURNING *
         `;
-        const updatedProject = await db.query(updateProjectQuery, [newHealth, targetProjectId]);
+        const updatedProject = await db.query(updateProjectQuery,
+          userId ? [newHealth, targetProjectId, userId] : [newHealth, targetProjectId]);
 
         const insertHistoryQuery = `
           INSERT INTO health_history (uuid, project_id, health_value, mood)
@@ -474,10 +541,11 @@ const resolvers = {
       }
     },
 
-    disminuirVida: async (_, { projectId }, { db }) => {
+    disminuirVida: async (_, { projectId }, { db, sessionId }) => {
       try {
-        const projectQuery = 'SELECT devgotchi_health FROM projects WHERE id = $1';
-        const projectResult = await db.query(projectQuery, [projectId]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const projectQuery = `SELECT devgotchi_health FROM projects WHERE id = $1 ${userId ? 'AND user_id = $2' : ''}`;
+        const projectResult = await db.query(projectQuery, userId ? [projectId, userId] : [projectId]);
         if (projectResult.rows.length === 0) throw new Error('Proyecto no encontrado');
 
         const currentHealth = projectResult.rows[0].devgotchi_health;
@@ -485,10 +553,11 @@ const resolvers = {
         const updateProjectQuery = `
           UPDATE projects
           SET devgotchi_health = $1, devgotchi_mood = 'sad'
-          WHERE id = $2
+          WHERE id = $2 ${userId ? 'AND user_id = $3' : ''}
           RETURNING *
         `;
-        const updatedProject = await db.query(updateProjectQuery, [newHealth, projectId]);
+        const updatedProject = await db.query(updateProjectQuery,
+          userId ? [newHealth, projectId, userId] : [newHealth, projectId]);
 
         const insertHistoryQuery = `
           INSERT INTO health_history (uuid, project_id, health_value, mood)
@@ -503,8 +572,13 @@ const resolvers = {
       }
     },
 
-    createActivity: async (_, { projectId, activityType, description, metadata, healthImpact, moodImpact }, { db }) => {
+    createActivity: async (_, { projectId, activityType, description, metadata, healthImpact, moodImpact }, { db, sessionId }) => {
       try {
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (userId) {
+          const owned = await db.query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [projectId, userId]);
+          if (owned.rows.length === 0) throw new Error('Proyecto no encontrado');
+        }
         const query = `
           INSERT INTO activities (uuid, project_id, activity_type, description, metadata, health_impact, mood_impact)
           VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -526,8 +600,13 @@ const resolvers = {
       }
     },
 
-    createWebhook: async (_, { projectId, webhookUrl, eventType }, { db }) => {
+    createWebhook: async (_, { projectId, webhookUrl, eventType }, { db, sessionId }) => {
       try {
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (userId) {
+          const owned = await db.query('SELECT id FROM projects WHERE id = $1 AND user_id = $2', [projectId, userId]);
+          if (owned.rows.length === 0) throw new Error('Proyecto no encontrado');
+        }
         const query = `
           INSERT INTO webhooks (uuid, project_id, webhook_url, event_type, is_active)
           VALUES ($1, $2, $3, $4, true)
@@ -541,15 +620,14 @@ const resolvers = {
       }
     },
 
-    toggleWebhook: async (_, { id, isActive }, { db }) => {
+    toggleWebhook: async (_, { id, isActive }, { db, sessionId }) => {
       try {
-        const query = `
-          UPDATE webhooks
-          SET is_active = $1
-          WHERE id = $2
-          RETURNING *
-        `;
-        const result = await db.query(query, [isActive, id]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId
+          ? `UPDATE webhooks SET is_active = $1 WHERE id = $2 AND project_id IN
+             (SELECT id FROM projects WHERE user_id = $3) RETURNING *`
+          : 'UPDATE webhooks SET is_active = $1 WHERE id = $2 RETURNING *';
+        const result = await db.query(query, userId ? [isActive, id, userId] : [isActive, id]);
         if (result.rows.length === 0) throw new Error('Webhook no encontrado');
         return formatWebhook(result.rows[0]);
       } catch (error) {
@@ -558,10 +636,11 @@ const resolvers = {
       }
     },
 
-    deleteProject: async (_, { id }, { db }) => {
+    deleteProject: async (_, { id }, { db, sessionId }) => {
       try {
-        const query = 'DELETE FROM projects WHERE id = $1 RETURNING id';
-        const result = await db.query(query, [id]);
+        const userId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        const query = userId ? 'DELETE FROM projects WHERE id = $1 AND user_id = $2 RETURNING id' : 'DELETE FROM projects WHERE id = $1 RETURNING id';
+        const result = await db.query(query, userId ? [id, userId] : [id]);
         return result.rows.length > 0;
       } catch (error) {
         console.error('Error deleting project:', error);
@@ -569,8 +648,10 @@ const resolvers = {
       }
     },
 
-    deleteUser: async (_, { id }, { db }) => {
+    deleteUser: async (_, { id }, { db, sessionId }) => {
       try {
+        const viewerId = sessionId ? await getOrCreateRepositoryOwner(db, sessionId) : null;
+        if (viewerId && String(viewerId) !== String(id)) return false;
         const query = 'DELETE FROM users WHERE id = $1 RETURNING id';
         const result = await db.query(query, [id]);
         return result.rows.length > 0;
