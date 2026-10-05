@@ -6,7 +6,7 @@ const riskyDependencyRules = {
 };
 
 const dangerousPatterns = [
-  { pattern: /\beval\s*\(/, label: 'uso de eval()' },
+  { pattern: /\beval\s*\(/, label: 'evaluación dinámica de código' },
   { pattern: /new\s+Function\s*\(/, label: 'construcción dinámica de funciones' },
   { pattern: /\bexec(?:Sync)?\s*\([^\n]*(?:req\.|request\.|params|query|body)/, label: 'comando de sistema con entrada de request' },
   { pattern: /rejectUnauthorized\s*:\s*false/, label: 'validación TLS deshabilitada' },

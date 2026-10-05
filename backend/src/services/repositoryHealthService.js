@@ -27,7 +27,16 @@ function createGitHubClient(fetchImpl, token) {
 
     if (!response.ok) {
       if (optional) return { available: false, status: response.status };
-      throw new Error(`GitHub respondió ${response.status}`);
+      const error = new Error(`GitHub respondió ${response.status}`);
+      error.githubStatus = response.status;
+      const remaining = response.headers?.get?.('x-ratelimit-remaining');
+      if (response.status === 403 && remaining === '0') {
+        error.code = 'GITHUB_RATE_LIMIT';
+        error.message = 'GitHub alcanzó el límite temporal de solicitudes';
+      } else if (response.status === 404) {
+        error.code = 'GITHUB_NOT_FOUND';
+      }
+      throw error;
     }
 
     return { available: true, data: await response.json() };
@@ -68,7 +77,13 @@ async function analyzeRepository(repositoryUrl, options = {}) {
     ? tree.filter((item) => item.type === 'blob').map((item) => item.path)
     : [];
   const files = treeResult.available
-    ? await readRepositoryFiles(github, basePath, tree)
+    ? await readRepositoryFiles(github, basePath, tree, {
+      fetchImpl,
+      owner,
+      repo,
+      branch,
+      token,
+    })
     : [];
   const testsPresent = pathMatches(paths, [
     /(^|\/)(__tests__|tests?|spec)\//i,

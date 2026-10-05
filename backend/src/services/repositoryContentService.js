@@ -25,14 +25,45 @@ function decodeBlob(data) {
   return buffer.toString('utf8');
 }
 
-async function readRepositoryFiles(github, basePath, tree = []) {
+function inspectText(content) {
+  const buffer = Buffer.from(content, 'utf8');
+  if (buffer.length > MAX_FILE_BYTES || buffer.includes(0)) return null;
+  return content;
+}
+
+function rawFileUrl(owner, repo, branch, filePath) {
+  const encodePath = (value) => String(value).split('/').map(encodeURIComponent).join('/');
+  return `https://raw.githubusercontent.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/${encodePath(branch)}/${encodePath(filePath)}`;
+}
+
+async function readRepositoryFiles(github, basePath, tree = [], options = {}) {
   const selected = selectInspectableFiles(tree);
   const files = [];
   const concurrency = 6;
+  const useRawContent = options.fetchImpl && options.owner && options.repo && options.branch;
 
   for (let start = 0; start < selected.length; start += concurrency) {
     const batch = selected.slice(start, start + concurrency);
     const results = await Promise.all(batch.map(async (item) => {
+      if (useRawContent) {
+        try {
+          const response = await options.fetchImpl(
+            rawFileUrl(options.owner, options.repo, options.branch, item.path),
+            {
+              headers: {
+                ...(options.token ? { Authorization: `Bearer ${options.token}` } : {}),
+                'User-Agent': 'DevGotchi',
+              },
+            },
+          );
+          if (!response.ok) return null;
+          const content = inspectText(await response.text());
+          return content === null ? null : { path: item.path, content };
+        } catch {
+          return null;
+        }
+      }
+
       const result = await github(`${basePath}/git/blobs/${encodeURIComponent(item.sha)}`, { optional: true });
       if (!result.available) return null;
       const content = decodeBlob(result.data);
@@ -48,6 +79,8 @@ module.exports = {
   MAX_FILES,
   MAX_FILE_BYTES,
   decodeBlob,
+  inspectText,
+  rawFileUrl,
   readRepositoryFiles,
   selectInspectableFiles,
 };

@@ -97,21 +97,26 @@ async function refreshRepositoryHealth(project, db, repositoryAnalyzer, force = 
     console.error('Error analyzing repository:', error.message);
     const hasVerifiedAnalysis = storedAnalysis
       && !storedAnalysis.checks?.some((item) => item.key === 'github-access');
+    const rateLimited = error.code === 'GITHUB_RATE_LIMIT';
     const diagnosis = {
       score: hasVerifiedAnalysis ? storedAnalysis.score : 50,
       analyzedAt: new Date().toISOString(),
-      summary: 'GitHub requiere acceso para analizar este repositorio.',
+      summary: rateLimited
+        ? 'GitHub alcanzó temporalmente el límite de solicitudes.'
+        : 'GitHub requiere acceso para analizar este repositorio.',
       checks: [{
         key: 'github-access',
-        label: 'Acceso al repositorio',
+        label: rateLimited ? 'Límite de GitHub' : 'Acceso al repositorio',
         status: 'unknown',
-        detail: 'El repositorio es privado o no está disponible. Configura GITHUB_TOKEN u OAuth con acceso de lectura.',
+        detail: rateLimited
+          ? 'El repositorio puede ser público. GitHub bloqueó temporalmente nuevas consultas por exceso de solicitudes; intenta nuevamente cuando se reinicie el límite o configura GITHUB_TOKEN.'
+          : 'El repositorio es privado, no existe o la cuenta conectada no tiene acceso. Configura GITHUB_TOKEN u OAuth con permisos para este repositorio.',
         impact: 0,
         source: 'GitHub',
       }],
-      recommendations: [
-        'Conecta GitHub con permisos de lectura para habilitar tests, CI/CD y alertas de seguridad.',
-      ],
+      recommendations: rateLimited
+        ? ['Espera el reinicio del límite de GitHub o configura GITHUB_TOKEN para aumentar la cuota.']
+        : ['Conecta una cuenta de GitHub que tenga acceso al repositorio para habilitar el análisis.'],
     };
     const result = await db.query(
       `UPDATE projects
