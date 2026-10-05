@@ -36,11 +36,13 @@ function saveGitHubConnection(connection) {
   if (!SESSION_SECRET) throw new Error('SESSION_SECRET es obligatorio para guardar la conexión');
 
   const store = readStore();
-  const key = String(connection.devgotchiId || connection.repository);
+  if (!connection.ownerKey) throw new Error('La conexión de GitHub requiere un propietario');
+  const key = `${connection.ownerKey}:${String(connection.devgotchiId || connection.repository)}`;
   store[key] = {
     devgotchiId: connection.devgotchiId || null,
     repository: connection.repository,
     githubUserId: connection.githubUserId,
+    ownerKey: connection.ownerKey,
     token: encrypt(connection.accessToken),
     refreshToken: connection.refreshToken ? encrypt(connection.refreshToken) : null,
     expiresAt: connection.expiresAt || null,

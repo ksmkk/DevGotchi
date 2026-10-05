@@ -26,11 +26,12 @@ describe('almacén cifrado de conexiones GitHub', () => {
       devgotchiId: 7,
       expiresAt: '2026-10-04T00:00:00.000Z',
       githubUserId: 42,
+      ownerKey: 'session-test',
       refreshToken: 'github-refresh-token',
       repository: 'acme/api',
     });
     const rawFile = fs.readFileSync(process.env.GITHUB_CONNECTION_STORE, 'utf8');
-    const persisted = JSON.parse(rawFile)['7'];
+    const persisted = JSON.parse(rawFile)['session-test:7'];
 
     expect(saved.token).toBeUndefined();
     expect(saved.refreshToken).toBeUndefined();

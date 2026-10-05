@@ -2,7 +2,7 @@
 
 ## 1. Estado base del backend
 
-### GET /
+### GET /api
 
 Devuelve un mensaje de prueba para confirmar que el backend está vivo.
 
@@ -106,7 +106,7 @@ query {
       score
       summary
       analyzedAt
-      checks { key label status detail impact }
+      checks { key label status detail impact source }
       recommendations
     }
   }
@@ -128,8 +128,9 @@ mutation {
 
 La mutación persiste el repositorio en `projects.repository_url`. La URL se
 normaliza quitando espacios, el slash final y el sufijo `.git`; si el
-repositorio ya existe, devuelve el proyecto guardado sin crear un duplicado.
-La conexión también marca ese proyecto como el DevGotchi actual; por eso al
+repositorio ya existe para el usuario actual, devuelve su proyecto guardado sin
+crear un duplicado. Dos usuarios pueden conectar la misma URL sin compartir estado.
+La conexión también marca ese proyecto como el DevGotchi actual del usuario; por eso al
 conectar o reconectar otra URL el panel cambia de repositorio y conserva la
 selección después de recargar.
 
@@ -150,11 +151,12 @@ mutation {
 
 `renombrarDevgotchi` cambia `projects.pet_name` sin modificar el nombre ni la
 URL del repositorio. `analizarRepositorio` consulta señales públicas de GitHub
-(tests, cobertura, Actions, `.gitignore` y `.env`) y, cuando `GITHUB_TOKEN`
-tiene permisos, alertas de Secret Scanning y Code Scanning. Las verificaciones
-sin permisos se devuelven como `unknown` y no descuentan vida. Los buckets se
-mantienen como no verificables hasta integrar el proveedor cloud. El análisis
-se guarda y se vuelve a sincronizar cada hora.
+(tests, cobertura, Actions, `.gitignore` y `.env`) y analiza pasivamente archivos
+de texto para encontrar credenciales redactadas, dependencias de riesgo, patrones
+inseguros e IaC con almacenamiento público. Secret Scanning y Code Scanning son
+fuentes complementarias. Cada check informa `source`; la ausencia de IaC se
+devuelve como `not_applicable`, no como no verificable. El análisis se guarda y
+se vuelve a sincronizar cada hora.
 
 Si GitHub no permite leer el repositorio (por ejemplo, porque es privado y no
 hay token), el diagnóstico queda en estado no verificable, usa una vida neutral

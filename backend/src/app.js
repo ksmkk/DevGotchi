@@ -1,5 +1,7 @@
 const express = require('express');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express4');
 const healthRoutes = require('./routes/health.routes');
@@ -13,6 +15,7 @@ const githubWebhookRoutes = require('./routes/githubWebhook.routes');
 const { FRONTEND_URL } = require('./config/env');
 const { startRepositoryHealthCron } = require('./services/cronService');
 const { analyzeRepository } = require('./services/repositoryHealthService');
+const { ensureSessionIdentity } = require('./auth/sessionIdentity');
 
 const app = express();
 let healthDecayTask;
@@ -29,7 +32,10 @@ app.use(cors({
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
+  credentials: true,
 }));
+
+app.use(ensureSessionIdentity);
 
 app.use('/api/github/webhook', githubWebhookRoutes);
 app.use(express.json({
@@ -39,7 +45,7 @@ app.use(express.json({
 }));
 app.use('/api/auth', githubAuthRoutes);
 
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.status(200).json({
     estado: 'El backend de DevGotchi está vivo',
   });
@@ -94,12 +100,32 @@ async function startApolloServer() {
   }
 
   app.use('/graphql', expressMiddleware(server, {
-    context: async () => ({
+    context: async ({ req }) => ({
       db: pool,
       dbType,
       repositoryAnalyzer: analyzeRepository,
+      sessionId: req.devgotchiSessionId,
     }),
   }));
+
+  const frontendDirectory = path.join(__dirname, '..', 'public');
+
+  if (fs.existsSync(frontendDirectory)) {
+    app.use(express.static(frontendDirectory));
+    app.get('*', (req, res, next) => {
+      if (req.path.startsWith('/api/') || req.path === '/api' || req.path === '/graphql') {
+        return next();
+      }
+
+      return res.sendFile(path.join(frontendDirectory, 'index.html'));
+    });
+  } else {
+    app.get('/', (req, res) => {
+      res.status(200).json({
+        estado: 'El backend de DevGotchi está vivo',
+      });
+    });
+  }
 
   return server;
 }

@@ -54,6 +54,7 @@ const typeDefs = `
     status: String!
     detail: String!
     impact: Int!
+    source: String!
   }
 
   type DiagnosticoRepositorio {

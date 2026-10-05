@@ -21,6 +21,7 @@ const DEV_GOTCHI_FIELDS = gql`
         status
         detail
         impact
+        source
       }
       recommendations
     }

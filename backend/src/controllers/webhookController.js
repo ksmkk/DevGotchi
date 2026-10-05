@@ -31,12 +31,12 @@ async function handleProjectWebhook(req, res) {
   const projectResult = await pool.query(
     `SELECT id FROM projects
      WHERE repository_url = $1 OR name = $2
-     ORDER BY id ASC LIMIT 1`,
+     ORDER BY id ASC`,
     [result.repositoryUrl || null, result.project],
   );
 
-  if (projectResult.rows.length > 0) {
-    const projectId = projectResult.rows[0].id;
+  for (const project of projectResult.rows) {
+    const projectId = project.id;
     const mood = result.health === 'healthy'
       ? 'happy'
       : result.health === 'critical' ? 'sad' : 'neutral';

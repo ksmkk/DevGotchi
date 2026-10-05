@@ -34,7 +34,7 @@ describe('API HTTP integrada', () => {
 
   test('expone raíz, health y estado de SQLite', async () => {
     await request(app)
-      .get('/')
+      .get('/api')
       .expect(200)
       .expect(({ body }) => expect(body.estado).toContain('vivo'));
 

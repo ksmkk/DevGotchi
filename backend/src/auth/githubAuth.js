@@ -35,10 +35,10 @@ function base64Url(value) {
     .replace(/=+$/g, '');
 }
 
-function createSignedOAuthState() {
+function createSignedOAuthState(ownerKey) {
   const state = base64Url(crypto.randomBytes(32));
   const codeVerifier = base64Url(crypto.randomBytes(32));
-  const payload = base64Url(Buffer.from(JSON.stringify({ state, codeVerifier })));
+  const payload = base64Url(Buffer.from(JSON.stringify({ state, codeVerifier, ownerKey })));
   const signature = base64Url(crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest());
 
   return {
@@ -231,7 +231,7 @@ async function registerRepositoryWebhook(accessToken, repository) {
 
 function startGitHubOAuth(req, res) {
   requireOAuthConfig();
-  const cookie = createSignedOAuthState();
+  const cookie = createSignedOAuthState(req.devgotchiSessionId);
   setOAuthCookie(res, cookie.cookieValue);
   return res.redirect(buildAuthorizationUrl(cookie.state, base64Url(
     crypto.createHash('sha256').update(cookie.codeVerifier).digest(),
@@ -271,6 +271,7 @@ async function completeGitHubOAuth(req, res) {
         devgotchiId: req.query.devgotchi_id,
         expiresAt: token.expiresAt,
         githubUserId: user.id,
+        ownerKey: stored.ownerKey,
         refreshToken: token.refreshToken,
         repository: repositoryData.full_name || `${repository.owner}/${repository.name}`,
       });

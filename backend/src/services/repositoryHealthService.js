@@ -1,4 +1,8 @@
 const { GITHUB_TOKEN } = require('../config/env');
+const { analyzeSecrets } = require('./secretAnalysisService');
+const { analyzeStaticSecurity } = require('./staticSecurityAnalysisService');
+const { analyzeInfrastructure } = require('./infrastructureAnalysisService');
+const { readRepositoryFiles } = require('./repositoryContentService');
 
 const API_VERSION = '2022-11-28';
 
@@ -30,20 +34,12 @@ function createGitHubClient(fetchImpl, token) {
   };
 }
 
-function check(key, label, status, detail, impact = 0) {
-  return { key, label, status, detail, impact };
+function check(key, label, status, detail, impact = 0, source = 'DevGotchi') {
+  return { key, label, status, detail, impact, source };
 }
 
 function pathMatches(paths, patterns) {
   return paths.some((path) => patterns.some((pattern) => pattern.test(path)));
-}
-
-function securityCheck(result, key, label, unavailableDetail, impact) {
-  if (!result?.available) return check(key, label, 'unknown', unavailableDetail);
-  const alerts = Array.isArray(result.data) ? result.data.length : 0;
-  return alerts > 0
-    ? check(key, label, 'critical', `${alerts} alerta(s) abierta(s) en GitHub.`, impact)
-    : check(key, label, 'healthy', 'GitHub no informa alertas abiertas.');
 }
 
 async function analyzeRepository(repositoryUrl, options = {}) {
@@ -67,8 +63,12 @@ async function analyzeRepository(repositoryUrl, options = {}) {
       : Promise.resolve({ available: false }),
   ]);
 
+  const tree = treeResult.available ? treeResult.data.tree || [] : [];
   const paths = treeResult.available
-    ? (treeResult.data.tree || []).filter((item) => item.type === 'blob').map((item) => item.path)
+    ? tree.filter((item) => item.type === 'blob').map((item) => item.path)
+    : [];
+  const files = treeResult.available
+    ? await readRepositoryFiles(github, basePath, tree)
     : [];
   const testsPresent = pathMatches(paths, [
     /(^|\/)(__tests__|tests?|spec)\//i,
@@ -84,12 +84,6 @@ async function analyzeRepository(repositoryUrl, options = {}) {
   const gitignorePresent = paths.includes('.gitignore');
   const trackedEnv = paths.filter((path) => /(^|\/)\.env(?:\.[^/]+)?$/i.test(path)
     && !/\.example$|\.sample$|\.template$/i.test(path));
-  const infrastructurePresent = pathMatches(paths, [
-    /\.tf$/i,
-    /(^|\/)(serverless|template)\.ya?ml$/i,
-    /(^|\/)cdk\.json$/i,
-    /(^|\/)cloudformation\//i,
-  ]);
   const workflows = workflowsResult.available ? workflowsResult.data.workflows || [] : [];
   const workflowPaths = paths.filter((path) => /^\.github\/workflows\/.*\.ya?ml$/i.test(path));
   const hasWorkflows = workflowPaths.length > 0;
@@ -131,28 +125,24 @@ async function analyzeRepository(repositoryUrl, options = {}) {
   checks.push(trackedEnv.length === 0
     ? check('environment', 'Archivos de entorno', 'healthy', 'No se detectaron archivos .env rastreados.')
     : check('environment', 'Archivos de entorno', 'critical', `Archivos sensibles rastreados: ${trackedEnv.join(', ')}.`, -30));
-  checks.push(securityCheck(
-    secretResult,
-    'secrets',
-    'Secretos expuestos',
-    'No verificable sin un token con permiso de lectura de alertas de secretos.',
-    -35,
-  ));
-  checks.push(securityCheck(
-    codeResult,
-    'code-scanning',
-    'Análisis de seguridad',
-    'No verificable sin Code Scanning y permisos de seguridad.',
-    -20,
-  ));
-  checks.push(check(
-    'buckets',
-    'Buckets e infraestructura',
-    'unknown',
-    infrastructurePresent
-      ? 'Se detectó infraestructura como código; falta conectar el proveedor cloud para validar permisos del bucket.'
-      : 'No se detectó infraestructura como código; los permisos de buckets requieren integrar el proveedor cloud.',
-  ));
+  const secretAnalysis = analyzeSecrets(
+    files,
+    trackedEnv,
+    secretResult.available && Array.isArray(secretResult.data) ? secretResult.data.length : null,
+  );
+  checks.push(check('secrets', 'Secretos expuestos', secretAnalysis.status,
+    secretAnalysis.detail, secretAnalysis.impact, secretAnalysis.source));
+
+  const securityAnalysis = analyzeStaticSecurity(
+    files,
+    codeResult.available && Array.isArray(codeResult.data) ? codeResult.data.length : null,
+  );
+  checks.push(check('code-scanning', 'Análisis de seguridad', securityAnalysis.status,
+    securityAnalysis.detail, securityAnalysis.impact, securityAnalysis.source));
+
+  const infrastructureAnalysis = analyzeInfrastructure(files, paths);
+  checks.push(check('buckets', 'Buckets e infraestructura', infrastructureAnalysis.status,
+    infrastructureAnalysis.detail, infrastructureAnalysis.impact, infrastructureAnalysis.source));
 
   const score = Math.max(0, Math.min(100, 100 + checks.reduce((total, item) => total + item.impact, 0)));
   const criticalCount = checks.filter((item) => item.status === 'critical').length;

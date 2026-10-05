@@ -78,7 +78,7 @@ describe("vista interactiva de DevGotchi", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: /Alimentar/i }));
-    expect(screen.getByText("¡Ñam! Pixel disfrutó su snack.")).toBeVisible();
+    expect(screen.getByText("¡Ñam! Pixel disfrutó su huesito.")).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: /Jugar/i }));
     expect(screen.getByText("¡Qué divertido! Pixel está feliz.")).toBeVisible();
@@ -309,5 +309,34 @@ describe("estados visuales de la mascota", () => {
     expect(container.querySelector("article"))
       .toHaveClass(`devgotchi-card--${cssState}`);
     expect(screen.getByText(label)).toBeVisible();
+  });
+
+  it("cambia la expresión del perro y el gato según la salud", () => {
+    const view = render(
+      <DevGotchiView
+        devgotchi={{ ...devgotchi, vida_actual: 95 }}
+        careLoading={false}
+        onCare={() => undefined}
+        onRename={() => undefined}
+        renameLoading={false}
+      />,
+    );
+    expect(view.container.querySelector(".pet-svg__tongue")).toBeInTheDocument();
+    expect(view.container.querySelector(".pet-svg__eyes--critical")).not.toBeInTheDocument();
+
+    view.rerender(
+      <DevGotchiView
+        devgotchi={{ ...devgotchi, vida_actual: 10 }}
+        careLoading={false}
+        onCare={() => undefined}
+        onRename={() => undefined}
+        renameLoading={false}
+      />,
+    );
+    expect(view.container.querySelector(".pet-svg__eyes--critical")).toBeInTheDocument();
+    expect(view.container.querySelector(".pet-svg__tongue")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /Gato/i }));
+    expect(view.container.querySelector(".cat .pet-svg__eyes--critical")).toBeInTheDocument();
   });
 });
