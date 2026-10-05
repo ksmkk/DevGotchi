@@ -105,6 +105,11 @@ async function analyzeRepository(repositoryUrl, options = {}) {
   const activeWorkflowCount = workflows.filter((workflow) => workflow.state === 'active').length;
   const runs = runsResult.available ? runsResult.data.workflow_runs || [] : [];
   const latestRun = runs[0];
+  const inconclusiveConclusions = new Set(['action_required', 'cancelled', 'neutral', 'skipped', 'stale']);
+  const latestConclusiveRun = runs.find((run) => run.status === 'completed'
+    && run.conclusion
+    && !inconclusiveConclusions.has(run.conclusion));
+  const evaluatedRun = latestConclusiveRun || latestRun;
 
   const checks = [];
   checks.push(testsPresent
@@ -124,14 +129,16 @@ async function analyzeRepository(repositoryUrl, options = {}) {
         : 'No hay workflows versionados en la rama principal.',
       -15,
     ));
-  } else if (!latestRun) {
+  } else if (!evaluatedRun) {
     checks.push(check('ci', 'CI/CD · GitHub Actions', 'warning', 'Hay workflows, pero no se encontraron ejecuciones recientes.', -10));
-  } else if (latestRun.status !== 'completed') {
-    checks.push(check('ci', 'CI/CD · GitHub Actions', 'warning', `${latestRun.name}: ${latestRun.status}.`, -8));
-  } else if (latestRun.conclusion === 'success') {
-    checks.push(check('ci', 'CI/CD · GitHub Actions', 'healthy', `${latestRun.name}: última ejecución exitosa.`));
+  } else if (evaluatedRun.status !== 'completed') {
+    checks.push(check('ci', 'CI/CD · GitHub Actions', 'warning', `${evaluatedRun.name}: ${evaluatedRun.status}.`, -8));
+  } else if (evaluatedRun.conclusion === 'success') {
+    checks.push(check('ci', 'CI/CD · GitHub Actions', 'healthy', `${evaluatedRun.name}: última ejecución concluyente exitosa.`));
+  } else if (inconclusiveConclusions.has(evaluatedRun.conclusion)) {
+    checks.push(check('ci', 'CI/CD · GitHub Actions', 'warning', `${evaluatedRun.name}: la ejecución fue ${evaluatedRun.conclusion} y no se considera un fallo.`, 0));
   } else {
-    checks.push(check('ci', 'CI/CD · GitHub Actions', 'critical', `${latestRun.name}: ${latestRun.conclusion || 'falló'}.`, -25));
+    checks.push(check('ci', 'CI/CD · GitHub Actions', 'critical', `${evaluatedRun.name}: ${evaluatedRun.conclusion || 'falló'}.`, -25));
   }
 
   checks.push(gitignorePresent

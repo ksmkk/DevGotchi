@@ -95,3 +95,28 @@ test('clasifica por separado el límite de solicitudes de GitHub', async () => {
   await expect(analyzeRepository('https://github.com/acme/app', { fetchImpl, token: '' }))
     .rejects.toMatchObject({ code: 'GITHUB_RATE_LIMIT', githubStatus: 403 });
 });
+
+test('ignora una ejecución cancelada si existe una CI concluyente exitosa', async () => {
+  const fetchImpl = jest.fn(async (url) => {
+    if (url.endsWith('/repos/acme/app')) return response({ default_branch: 'main' });
+    if (url.includes('/git/trees/')) return response({ tree: [
+      { type: 'blob', path: '.gitignore' },
+      { type: 'blob', path: 'src/app.test.js' },
+      { type: 'blob', path: 'codecov.yml' },
+      { type: 'blob', path: '.github/workflows/ci.yml' },
+    ] });
+    if (url.includes('/actions/workflows')) return response({ workflows: [{ id: 1, state: 'active' }] });
+    if (url.includes('/actions/runs')) return response({ workflow_runs: [
+      { name: 'CI', status: 'completed', conclusion: 'cancelled' },
+      { name: 'CI', status: 'completed', conclusion: 'success' },
+    ] });
+    throw new Error(`URL inesperada: ${url}`);
+  });
+
+  const result = await analyzeRepository('https://github.com/acme/app', { fetchImpl, token: '' });
+  const ci = result.checks.find((item) => item.key === 'ci');
+
+  expect(ci).toMatchObject({ status: 'healthy', impact: 0 });
+  expect(ci.detail).toContain('exitosa');
+  expect(result.score).toBe(100);
+});
