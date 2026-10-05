@@ -158,7 +158,7 @@ function App() {
       setRepositoryUrl("");
       setConnectionMessage("Repositorio conectado correctamente.");
     } catch {
-      // Apollo expone el detalle mediante connectState.error.
+      return;
     }
   }
 

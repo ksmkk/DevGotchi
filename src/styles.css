@@ -795,7 +795,6 @@ h1 {
 .platypus__scarf { top: 82px; left: 47px; width: 77px; background: #4263a9; border-color: #273963; }
 .platypus__tag { top: 88px; left: 75px; color: #273963; border-color: #273963; background: #8ed9e0; }
 
-/* Vector characters share a polished illustration and animation rig. */
 .pet-svg.dog,
 .pet-svg.cat,
 .pet-svg.platypus {
@@ -826,6 +825,12 @@ h1 {
 .pet-svg__tongue {
   transform-box: fill-box;
   transform-origin: center;
+}
+
+.platypus__fedora {
+  transform-box: fill-box;
+  transform-origin: 52% 80%;
+  filter: drop-shadow(0 4px 3px rgb(52 35 25 / 24%));
 }
 
 .health-indicator--warning .pet-svg {
@@ -1861,6 +1866,11 @@ h1 {
   .pet-svg.cat .pet-svg__tail { animation: vector-tail-cat 2.1s ease-in-out infinite alternate; transform-origin: 18% 70%; }
   .pet-svg.platypus .pet-svg__tail { animation: vector-tail-plat 2.4s ease-in-out infinite alternate; transform-origin: 75% 65%; }
 
+  .health-indicator--platypus.health-indicator--playing .platypus__fedora,
+  .health-indicator--platypus.health-indicator--entering .platypus__fedora {
+    animation: fedora-tip 680ms cubic-bezier(.22, .8, .28, 1) 380ms;
+  }
+
   .health-indicator--feeding .pet-svg.dog,
   .health-indicator--feeding .pet-svg.cat,
   .health-indicator--feeding .pet-svg.platypus {
@@ -2141,6 +2151,12 @@ h1 {
   @keyframes platypus-tail {
     from { transform: rotate(-35deg); }
     to { transform: rotate(-25deg); }
+  }
+
+  @keyframes fedora-tip {
+    0%, 100% { transform: rotate(0deg) translateY(0); }
+    38% { transform: rotate(-8deg) translate(-2px, 2px); }
+    68% { transform: rotate(3deg) translateY(-1px); }
   }
 
   @keyframes ear-twitch {

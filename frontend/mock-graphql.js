@@ -59,6 +59,5 @@ const server = http.createServer((request, response) => {
 });
 
 server.listen(PORT, () => {
-  // eslint-disable-next-line no-undef
-  console.log(`Mock GraphQL disponible en http://localhost:${PORT}/graphql`);
+  globalThis.console.log(`Mock GraphQL disponible en http://localhost:${PORT}/graphql`);
 });

@@ -25,15 +25,12 @@ const allowedOrigins = new Set(
 
 app.use(cors({
   origin(origin, callback) {
-    // Requests without Origin are server-to-server and are not subject to CORS.
     callback(null, !origin || allowedOrigins.has(origin));
   },
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
 }));
 
-// GitHub requires the exact raw body to validate X-Hub-Signature-256.
-// This route must be registered before express.json consumes the request body.
 app.use('/api/github/webhook', githubWebhookRoutes);
 app.use(express.json({
   verify: (req, res, buffer) => {
@@ -76,17 +73,11 @@ app.use('/health', healthRoutes);
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/projects', projectsRoutes);
 
-/**
- * Inicializar Apollo Server
- * Esta función debe ser llamada en server.js
- */
 async function startApolloServer() {
-  // Crear la instancia de Apollo Server
   const server = new ApolloServer({
     typeDefs,
     resolvers,
     cache: 'bounded',
-    // Configurar manejo de errores
     formatError: (error) => {
       console.error('GraphQL Error:', error);
       return {
@@ -96,15 +87,12 @@ async function startApolloServer() {
     },
   });
 
-  // Iniciar el servidor
   await server.start();
 
   if (!healthDecayTask) {
     healthDecayTask = startRepositoryHealthCron(pool, analyzeRepository);
   }
 
-  // Integrar Apollo Server 5 con Express 4. El body ya fue procesado por
-  // express.json, registrado antes de las rutas HTTP.
   app.use('/graphql', expressMiddleware(server, {
     context: async () => ({
       db: pool,

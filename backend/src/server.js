@@ -3,23 +3,17 @@ const { startApolloServer } = app;
 const { PORT } = require('./config/env');
 const { initializeDatabase } = require('../db/database-init');
 
-/**
- * Función async para inicializar el servidor
- */
 async function main() {
   try {
-    // 1. Inicializar la base de datos
     const databaseReady = await initializeDatabase();
     if (!databaseReady) {
       throw new Error('No se pudo inicializar la base de datos');
     }
     console.log('✅ Base de datos inicializada');
 
-    // 2. Iniciar Apollo Server
     const apolloServer = await startApolloServer();
     console.log('✅ Apollo Server iniciado');
 
-    // 3. Iniciar el servidor Express
     app.listen(PORT, () => {
       console.log(`🚀 Servidor escuchando en http://localhost:${PORT}`);
       console.log(`📊 GraphQL disponible en http://localhost:${PORT}/graphql`);

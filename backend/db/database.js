@@ -2,14 +2,12 @@ const config = require('../src/config/env');
 const path = require('path');
 
 let pool;
-let dbType = 'sqlite'; // Por defecto SQLite para desarrollo
+let dbType = 'sqlite';
 
-// Detectar si usar PostgreSQL (si DB_HOST está configurado)
 if (config.DB_HOST && config.DB_HOST !== 'localhost') {
   dbType = 'postgres';
 }
 
-// SQLite para desarrollo local
 if (dbType === 'sqlite') {
   const { DatabaseSync } = require('node:sqlite');
   const dbPath = path.join(__dirname, '../../devgotchi.db');
@@ -17,7 +15,6 @@ if (dbType === 'sqlite') {
   const db = new DatabaseSync(dbPath);
   db.exec('PRAGMA journal_mode = WAL');
 
-  // Wrapper compatible con la interfaz usada por PostgreSQL.
   pool = {
     query: (sql, params = []) => {
       try {
@@ -51,7 +48,6 @@ if (dbType === 'sqlite') {
   
   console.log(`📁 Usando SQLite en: ${dbPath}`);
 }
-// PostgreSQL para producción
 else {
   const { Pool } = require('pg');
   

@@ -1,8 +1,3 @@
-/**
- * Script de inicialización de la base de datos
- * Se ejecuta cuando el servidor inicia para asegurar que el esquema existe
- */
-
 const fs = require('fs');
 const path = require('path');
 const { pool, dbType } = require('./database');
@@ -21,12 +16,10 @@ const initializeDatabase = async () => {
 
     console.log(`🔧 Inicializando base de datos (${dbType.toUpperCase()})...`);
     
-    // Para SQLite, ejecutar cada query por separado
     if (dbType === 'sqlite') {
       const statements = schemaSql
         .split(';')
         .map(s => {
-          // Remover comentarios y espacios
           return s
             .split('\n')
             .filter(line => !line.trim().startsWith('--'))
@@ -39,14 +32,12 @@ const initializeDatabase = async () => {
         try {
           await pool.query(statement + ';');
         } catch (err) {
-          // Ignorar errores de "already exists" para triggers/indexes
           if (!err.message.includes('already exists')) {
             throw err;
           }
         }
       }
     } else {
-      // Para PostgreSQL, ejecutar todo junto
       await pool.query(schemaSql);
     }
 
