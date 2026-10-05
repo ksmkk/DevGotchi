@@ -130,6 +130,21 @@ describe("vista interactiva de DevGotchi", () => {
     expect(await screen.findByRole("radio", { name: /Gato/i })).toBeChecked();
   });
 
+  it("da camarones al ornitorrinco y no muestra letras decorativas detrás", async () => {
+    const { container } = render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Ornitorrinco/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Alimentar/i }));
+
+    expect(screen.getByText("¡Ñam! Pixel disfrutó su camarón de río.")).toBeVisible();
+    expect(container.querySelector(".pet-prop__food")).toHaveTextContent("🦐");
+    expect(container.querySelector(".pet-stage__wordmark")).not.toBeInTheDocument();
+  });
+
   it("oculta el diagnóstico GraphQL en la interfaz general", async () => {
     render(
       <MockedProvider mocks={[queryMock]}>

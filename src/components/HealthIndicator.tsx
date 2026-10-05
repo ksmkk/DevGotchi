@@ -160,7 +160,7 @@ export function HealthIndicator({
       {species === "platypus" ? <Platypus /> : null}
 
       <div className="pet-prop pet-prop--bowl" aria-hidden="true">
-        <span className="pet-prop__food">{species === "dog" ? "🦴" : species === "cat" ? "🐟" : "🔋"}</span>
+        <span className="pet-prop__food">{species === "dog" ? "🦴" : species === "cat" ? "🐟" : "🦐"}</span>
       </div>
       <div className="pet-prop pet-prop--ball" aria-hidden="true">
         <span />

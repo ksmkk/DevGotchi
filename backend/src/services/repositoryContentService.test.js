@@ -36,3 +36,28 @@ test('descarga sólo blobs seleccionados con concurrencia acotada', async () => 
   expect(files).toEqual([{ path: 'src/app.js', content: 'const ok = true;' }]);
   expect(github).toHaveBeenCalledTimes(1);
 });
+
+test('lee archivos desde raw GitHub sin gastar una llamada API por blob', async () => {
+  const github = jest.fn();
+  const fetchImpl = jest.fn().mockResolvedValue({
+    ok: true,
+    text: async () => 'const publicRepo = true;',
+  });
+
+  const files = await readRepositoryFiles(github, '/repos/acme/app', [
+    { type: 'blob', path: 'src/app.js', sha: 'abc', size: 30 },
+  ], {
+    fetchImpl,
+    owner: 'acme',
+    repo: 'app',
+    branch: 'main',
+    token: '',
+  });
+
+  expect(files).toEqual([{ path: 'src/app.js', content: 'const publicRepo = true;' }]);
+  expect(fetchImpl).toHaveBeenCalledWith(
+    'https://raw.githubusercontent.com/acme/app/main/src/app.js',
+    expect.any(Object),
+  );
+  expect(github).not.toHaveBeenCalled();
+});

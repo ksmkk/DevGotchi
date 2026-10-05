@@ -389,4 +389,34 @@ describe('nombre y diagnóstico del DevGotchi', () => {
       expect.arrayContaining([50, expect.stringContaining('GITHUB_TOKEN'), 9]),
     );
   });
+
+  test('no confunde el límite temporal de GitHub con un repositorio privado', async () => {
+    const project = {
+      id: 10,
+      uuid: 'public-project',
+      user_id: 2,
+      name: 'public-app',
+      repository_url: 'https://github.com/acme/public-app',
+      devgotchi_health: 100,
+      devgotchi_mood: 'neutral',
+    };
+    const db = {
+      query: jest.fn()
+        .mockResolvedValueOnce({ rows: [project] })
+        .mockResolvedValueOnce({ rows: [project] }),
+    };
+    const rateLimitError = new Error('GitHub alcanzó el límite temporal de solicitudes');
+    rateLimitError.code = 'GITHUB_RATE_LIMIT';
+    const repositoryAnalyzer = jest.fn().mockRejectedValue(rateLimitError);
+
+    const result = await resolvers.Mutation.analizarRepositorio(
+      null,
+      { projectId: 10 },
+      { db, repositoryAnalyzer },
+    );
+
+    expect(result.diagnostico.summary).toContain('límite de solicitudes');
+    expect(result.diagnostico.checks[0].detail).toContain('puede ser público');
+    expect(result.diagnostico.checks[0].detail).not.toContain('es privado');
+  });
 });

@@ -40,7 +40,7 @@ const speciesDetails: Record<PetSpecies, { icon: string; label: string; greeting
 const speciesFood: Record<PetSpecies, { icon: string; name: string }> = {
   dog: { icon: "🦴", name: "huesito" },
   cat: { icon: "🐟", name: "pescadito" },
-  platypus: { icon: "🔋", name: "batería de código" },
+  platypus: { icon: "🦐", name: "camarón de río" },
 };
 
 const petSpeciesStorageKey = "devgotchi-pet-species";
@@ -214,10 +214,6 @@ export function DevGotchiView({
       </header>
 
       <div className={`pet-stage pet-stage--${species}`} aria-live="polite" onClick={movePetToClick}>
-        <div className="pet-stage__wordmark" aria-hidden="true">
-          <span>{species === "dog" ? "GOOD" : species === "cat" ? "CODE" : "DEV"}</span>
-          <span>{species === "dog" ? "DOG" : species === "cat" ? "CAT" : "GOTCHI"}</span>
-        </div>
         <div className="pet-stage__sky" aria-hidden="true">
           <span className="pet-stage__cloud pet-stage__cloud--one" />
           <span className="pet-stage__cloud pet-stage__cloud--two" />

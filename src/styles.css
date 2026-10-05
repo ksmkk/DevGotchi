@@ -1018,24 +1018,6 @@ h1 {
   background-size: 34px 34px, auto;
 }
 
-.pet-stage__wordmark {
-  position: absolute;
-  z-index: 2;
-  inset: 48px 10px auto;
-  display: grid;
-  color: rgb(28 72 52 / 11%);
-  font-size: clamp(3.1rem, 9vw, 5.7rem);
-  font-weight: 1000;
-  letter-spacing: -.08em;
-  line-height: .72;
-  pointer-events: none;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-.pet-stage--cat .pet-stage__wordmark { color: rgb(72 55 105 / 13%); }
-.pet-stage--dog .pet-stage__wordmark { color: rgb(106 74 28 / 12%); }
-
 .play-burst {
   position: absolute;
   z-index: 14;
