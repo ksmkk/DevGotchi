@@ -1,10 +1,23 @@
 const sensitiveName = /(?:api[_-]?key|access[_-]?key|client[_-]?secret|private[_-]?key|password|passwd|secret|token)/i;
-const assignment = /\b([A-Za-z_][A-Za-z0-9_.-]*)\s*[:=]\s*["']?([^\s,"'`;#}]{8,})/;
+const quotedAssignment = /\b([A-Za-z_][A-Za-z0-9_.-]*)\s*[:=]\s*(["'`])([^"'`]+)\2/;
+const bareAssignment = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\s*[=:]\s*([^\s,;#}\]]+)\s*;?\s*$/;
 const obviousPlaceholder = /^(?:example|sample|dummy|fake|test|changeme|replace[_-]?me|your[_-]|xxx+|<[^>]+>|\$\{|process\.env)/i;
 const exampleFile = /(?:^|\/)(?:\.env\.)?(?:example|sample|template)(?:\.|$)|\.(?:example|sample|template)$/i;
 
+function isNamedPlaceholder(value) {
+  const words = String(value).toLowerCase().split(/[-_]+/).filter(Boolean);
+  const placeholderWords = new Set([
+    'access', 'clave', 'client', 'github', 'refresh', 'secret', 'segura', 'test', 'token', 'una', 'webhook',
+  ]);
+  return words.length >= 2 && words.every((word) => placeholderWords.has(word));
+}
+
 function looksLikeCredential(value) {
-  if (!value || obviousPlaceholder.test(value)) return false;
+  if (!value || obviousPlaceholder.test(value) || isNamedPlaceholder(value)) return false;
+  if (/\$\{/.test(value)) return false;
+  if (/^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+$/.test(value)) return false;
+  if (/^[A-Z][A-Z0-9_]*$/.test(value)) return false;
+  if (/^(?:(?:access|refresh|client|api|private|webhook)[_-]?)?(?:token|secret|key|password)$/i.test(value)) return false;
   if (/^(?:true|false|null|undefined|localhost)$/i.test(value)) return false;
   const variety = [/[a-z]/.test(value), /[A-Z]/.test(value), /\d/.test(value), /[^A-Za-z0-9]/.test(value)]
     .filter(Boolean).length;
@@ -21,9 +34,12 @@ function analyzeSecrets(files = [], trackedEnv = [], githubAlertCount = null) {
     if (exampleFile.test(file.path)) continue;
     file.content.split(/\r?\n/).forEach((line, index) => {
       if (/^\s*(?:#|\/\/)/.test(line)) return;
-      const match = line.match(assignment);
-      if (match && sensitiveName.test(match[1]) && looksLikeCredential(match[2])) {
-        findings.push(safeLocation(file.path, index + 1, match[1]));
+      const quotedMatch = line.match(quotedAssignment);
+      const bareMatch = quotedMatch ? null : line.match(bareAssignment);
+      const variable = quotedMatch?.[1] || bareMatch?.[1];
+      const value = quotedMatch?.[3] || bareMatch?.[2];
+      if (variable && sensitiveName.test(variable) && looksLikeCredential(value)) {
+        findings.push(safeLocation(file.path, index + 1, variable));
       }
       if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(line)) {
         findings.push(`${file.path}:${index + 1} (PRIVATE_KEY)`);
