@@ -38,6 +38,28 @@ test('evita falsos positivos obvios', () => {
   expect(result.status).toBe('healthy');
 });
 
+test('ignora secretos genéricos de fixtures spec pero conserva firmas reales', () => {
+  const fixtures = analyzeSecrets([
+    {
+      path: 'src/config/env.validation.spec.ts',
+      content: 'JWT_SECRET="a-long-random-value-used-only-by-unit-tests"',
+    },
+    {
+      path: 'src/modules/auth/application/services/auth.service.spec.ts',
+      content: 'const passwordHash = "long-password-hash-for-auth-service-tests";',
+    },
+  ], []);
+  const leakedProviderToken = analyzeSecrets([
+    {
+      path: 'src/auth/auth.service.spec.ts',
+      content: 'const TOKEN = "ghp_1234567890abcdefghijABCD";',
+    },
+  ], []);
+
+  expect(fixtures.status).toBe('healthy');
+  expect(leakedProviderToken).toMatchObject({ status: 'critical', impact: -35 });
+});
+
 test('detecta secretos literales en formatos comunes', () => {
   const fixtureOne = 'CorrectHorseBatteryStaple42!';
   const fixtureTwo = 'ghp_1234567890abcdefghij';

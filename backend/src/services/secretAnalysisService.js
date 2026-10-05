@@ -3,6 +3,7 @@ const quotedAssignment = /\b([A-Za-z_][A-Za-z0-9_.-]*)\s*[:=]\s*(["'`])([^"'`]+)
 const bareAssignment = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\s*[=:]\s*([^\s,;#}\]]+)\s*;?\s*$/;
 const obviousPlaceholder = /^(?:example|sample|dummy|fake|test|changeme|replace[_-]?me|your[_-]|xxx+|<[^>]+>|\$\{|process\.env)/i;
 const exampleFile = /(?:^|\/)(?:\.env\.)?(?:example|sample|template)(?:\.|$)|\.(?:example|sample|template)$/i;
+const testFile = /(?:^|\/)(?:__tests__|tests?|spec)(?:\/|$)|\.(?:test|spec)\.[^/]+$/i;
 
 function isNamedPlaceholder(value) {
   const words = String(value).toLowerCase().split(/[-_]+/).filter(Boolean);
@@ -24,6 +25,10 @@ function looksLikeCredential(value) {
   return value.length >= 16 || (value.length >= 10 && variety >= 2);
 }
 
+function looksLikeProviderCredential(value) {
+  return /^(?:gh[pousr]_[A-Za-z0-9]{20,}|AKIA[A-Z0-9]{16}|xox[baprs]-[A-Za-z0-9-]{10,}|sk_live_[A-Za-z0-9]{12,})$/.test(value);
+}
+
 function safeLocation(path, lineNumber, variable) {
   return `${path}:${lineNumber} (${variable.toUpperCase()})`;
 }
@@ -38,7 +43,8 @@ function analyzeSecrets(files = [], trackedEnv = [], githubAlertCount = null) {
       const bareMatch = quotedMatch ? null : line.match(bareAssignment);
       const variable = quotedMatch?.[1] || bareMatch?.[1];
       const value = quotedMatch?.[3] || bareMatch?.[2];
-      if (variable && sensitiveName.test(variable) && looksLikeCredential(value)) {
+      const genericTestFixture = testFile.test(file.path) && !looksLikeProviderCredential(value);
+      if (variable && sensitiveName.test(variable) && looksLikeCredential(value) && !genericTestFixture) {
         findings.push(safeLocation(file.path, index + 1, variable));
       }
       if (/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/.test(line)) {
