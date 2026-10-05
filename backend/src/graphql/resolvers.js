@@ -5,6 +5,7 @@ const scryptAsync = promisify(scrypt);
 
 const LOCAL_USER_EMAIL = 'local@devgotchi.invalid';
 const LOCAL_USERNAME = 'devgotchi-local';
+const DEFAULT_PET_NAME = 'Pixel';
 
 async function hashPassword(password) {
   const normalizedPassword = String(password || '');
@@ -314,10 +315,10 @@ const resolvers = {
 
       const name = normalizedRepositoryUrl.split('/').filter(Boolean).pop() || 'repositorio';
       const result = await db.query(
-        `INSERT INTO projects (uuid, user_id, name, repository_url, devgotchi_health, devgotchi_mood)
-         VALUES ($1, $2, $3, $4, 100, 'neutral')
+        `INSERT INTO projects (uuid, user_id, name, repository_url, pet_name, devgotchi_health, devgotchi_mood)
+         VALUES ($1, $2, $3, $4, $5, 100, 'neutral')
          RETURNING *`,
-        [randomUUID(), ownerId, name, normalizedRepositoryUrl],
+        [randomUUID(), ownerId, name, normalizedRepositoryUrl, DEFAULT_PET_NAME],
       );
 
       const selectedProject = await markCurrentProject(db, result.rows[0], userId);
@@ -798,7 +799,7 @@ function formatProject(row) {
     lastCommitDate: formatDate(row.last_commit_date),
     createdAt: formatDate(row.created_at),
     updatedAt: formatDate(row.updated_at),
-    nombre: row.pet_name || row.name,
+    nombre: row.pet_name || DEFAULT_PET_NAME,
     vida_actual: row.devgotchi_health,
     repository_url: row.repository_url,
     diagnostico: row.repositoryDiagnosis || parseStoredAnalysis(row.repository_analysis),
