@@ -827,6 +827,12 @@ h1 {
   transform-origin: center;
 }
 
+.platypus__fedora {
+  transform-box: fill-box;
+  transform-origin: 52% 80%;
+  filter: drop-shadow(0 4px 3px rgb(52 35 25 / 24%));
+}
+
 .health-indicator--warning .pet-svg {
   filter: saturate(.88) drop-shadow(0 7px 5px rgb(33 55 40 / 13%));
 }
@@ -1860,6 +1866,11 @@ h1 {
   .pet-svg.cat .pet-svg__tail { animation: vector-tail-cat 2.1s ease-in-out infinite alternate; transform-origin: 18% 70%; }
   .pet-svg.platypus .pet-svg__tail { animation: vector-tail-plat 2.4s ease-in-out infinite alternate; transform-origin: 75% 65%; }
 
+  .health-indicator--platypus.health-indicator--playing .platypus__fedora,
+  .health-indicator--platypus.health-indicator--entering .platypus__fedora {
+    animation: fedora-tip 680ms cubic-bezier(.22, .8, .28, 1) 380ms;
+  }
+
   .health-indicator--feeding .pet-svg.dog,
   .health-indicator--feeding .pet-svg.cat,
   .health-indicator--feeding .pet-svg.platypus {
@@ -2140,6 +2151,12 @@ h1 {
   @keyframes platypus-tail {
     from { transform: rotate(-35deg); }
     to { transform: rotate(-25deg); }
+  }
+
+  @keyframes fedora-tip {
+    0%, 100% { transform: rotate(0deg) translateY(0); }
+    38% { transform: rotate(-8deg) translate(-2px, 2px); }
+    68% { transform: rotate(3deg) translateY(-1px); }
   }
 
   @keyframes ear-twitch {
