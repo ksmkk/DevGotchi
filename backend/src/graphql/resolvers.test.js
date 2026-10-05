@@ -157,10 +157,12 @@ describe('Mutation.conectarRepositorio', () => {
       { db },
     );
 
-    expect(result.nombre).toBe('api-gateway');
+    expect(result.nombre).toBe('Pixel');
+    expect(result.name).toBe('api-gateway');
     expect(result.repositoryUrl).toBe('https://github.com/acme/api-gateway');
     expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('SELECT id FROM users'));
     expect(db.query).toHaveBeenNthCalledWith(3, expect.stringContaining('INSERT INTO projects'), expect.any(Array));
+    expect(db.query.mock.calls[2][1]).toContain('Pixel');
   });
 
   test('normaliza la URL antes de consultar y guardar el repositorio', async () => {

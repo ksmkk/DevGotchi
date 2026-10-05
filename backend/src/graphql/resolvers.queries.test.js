@@ -54,7 +54,7 @@ describe('queries y campos GraphQL', () => {
     ]);
     await expect(resolvers.Query.user(null, { id: 1 }, { db })).resolves.toMatchObject({ username: 'dev' });
     await expect(resolvers.Query.projects(null, null, { db })).resolves.toEqual([
-      expect.objectContaining({ id: '2', nombre: 'api', vida_actual: 80 }),
+      expect.objectContaining({ id: '2', nombre: 'Pixel', name: 'api', vida_actual: 80 }),
     ]);
     await expect(resolvers.Query.project(null, { id: 2 }, { db })).resolves.toMatchObject({ name: 'api' });
     await expect(resolvers.Query.userProjects(null, { userId: 1 }, { db })).resolves.toHaveLength(1);

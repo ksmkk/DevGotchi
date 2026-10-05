@@ -123,6 +123,7 @@ describe('operaciones GraphQL de DevGotchi', () => {
       1,
       'app',
       'https://github.com/devgotchi/app',
+      'Pixel',
     ]);
   });
 });
