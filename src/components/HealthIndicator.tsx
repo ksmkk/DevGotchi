@@ -75,7 +75,14 @@ function Dog({ health }: { health: HealthStatus }) {
         )}
         <ellipse cx="112" cy="104" rx="30" ry="23" fill="#fff1d7" />
         <path d="M101 95c1-8 21-8 22 0 0 7-6 10-11 10s-11-3-11-10z" fill="#3c2922" />
-        <path d={health === "healthy" ? "M112 105v5m0 0c-9 0-11 8-16 7m16-7c9 0 11 8 16 7" : health === "warning" ? "M112 105v7m-12 8q12-8 24 0" : "M112 105v7m-14 12q14-12 28 0"} fill="none" stroke="#684234" strokeWidth="3" strokeLinecap="round" />
+        <path
+          className={`pet-svg__mouth pet-svg__mouth--${health}`}
+          d={health === "healthy" ? "M96 108q16 18 32 0" : health === "warning" ? "M99 119q13-8 26 0" : "M98 124q14-14 28 0"}
+          fill="none"
+          stroke="#684234"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
         {health === "healthy" ? <path className="pet-svg__tongue" d="M104 116h16v8c0 9-16 9-16 0z" fill="#ed8290" stroke="#8f4853" strokeWidth="2" /> : null}
         <path d="M70 119c22 12 62 12 84 0" fill="none" stroke="#2f6f63" strokeWidth="10" strokeLinecap="round" />
         <circle cx="112" cy="130" r="13" fill="#ffd75e" stroke="#65402d" strokeWidth="3" />
@@ -111,7 +118,14 @@ function Cat({ health }: { health: HealthStatus }) {
           <g className="pet-svg__eyes"><path d="M76 75c6-11 20-11 26 0-5 13-21 13-26 0zM122 75c6-11 20-11 26 0-5 13-21 13-26 0z" fill="#d9d35e" stroke="#4e4655" strokeWidth="3" /><path d="M89 68v15m46-15v15" stroke="#242329" strokeWidth="4" strokeLinecap="round" /><circle cx="85" cy="72" r="2" fill="white" /><circle cx="131" cy="72" r="2" fill="white" /></g>
         )}
         <ellipse cx="112" cy="104" rx="27" ry="20" fill="#f1eef3" /><path d="M105 94c2-6 13-6 15 0-1 6-5 8-8 8s-7-2-7-8z" fill="#bc6e7c" />
-        <path d={health === "healthy" ? "M112 102v6m0 0c-7 0-9 6-13 6m13-6c7 0 9 6 13 6" : health === "warning" ? "M112 102v7m-11 9q11-7 22 0" : "M112 102v7m-13 13q13-11 26 0"} fill="none" stroke="#5a4651" strokeWidth="2.5" strokeLinecap="round" />
+        <path
+          className={`pet-svg__mouth pet-svg__mouth--${health}`}
+          d={health === "healthy" ? "M99 106q13 16 26 0" : health === "warning" ? "M101 117q11-7 22 0" : "M99 122q13-12 26 0"}
+          fill="none"
+          stroke="#5a4651"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
         <g className="pet-svg__whiskers" fill="none" stroke="#5c535f" strokeWidth="2" strokeLinecap="round"><path d="M91 103L48 95m43 15-45 7m87-14 43-8m-43 15 45 7" /></g>
         <path d="M72 119c23 11 57 11 80 0" fill="none" stroke="#c95f79" strokeWidth="9" strokeLinecap="round" /><circle cx="112" cy="129" r="12" fill="#f6d45e" stroke="#4e4655" strokeWidth="3" /><text x="112" y="134" textAnchor="middle" fill="#a84055" fontSize="12" fontWeight="900">♥</text>
       </g>

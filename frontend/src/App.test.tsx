@@ -337,7 +337,11 @@ describe("estados visuales de la mascota", () => {
       />,
     );
     expect(view.container.querySelector(".pet-svg__tongue")).toBeInTheDocument();
+    expect(view.container.querySelector(".dog .pet-svg__mouth--healthy")).toBeInTheDocument();
     expect(view.container.querySelector(".pet-svg__eyes--critical")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("radio", { name: /Gato/i }));
+    expect(view.container.querySelector(".cat .pet-svg__mouth--healthy")).toBeInTheDocument();
 
     view.rerender(
       <DevGotchiView
@@ -348,11 +352,13 @@ describe("estados visuales de la mascota", () => {
         renameLoading={false}
       />,
     );
-    expect(view.container.querySelector(".pet-svg__eyes--critical")).toBeInTheDocument();
+    expect(view.container.querySelector(".cat .pet-svg__eyes--critical")).toBeInTheDocument();
+    expect(view.container.querySelector(".cat .pet-svg__mouth--critical")).toBeInTheDocument();
     expect(view.container.querySelector(".pet-svg__tongue")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: /Gato/i }));
-    expect(view.container.querySelector(".cat .pet-svg__eyes--critical")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /Perro/i }));
+    expect(view.container.querySelector(".dog .pet-svg__eyes--critical")).toBeInTheDocument();
+    expect(view.container.querySelector(".dog .pet-svg__mouth--critical")).toBeInTheDocument();
   });
 
   it("cambia la expresión del ornitorrinco entre saludable, bajo y crítico", () => {
