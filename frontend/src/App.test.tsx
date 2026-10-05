@@ -354,4 +354,32 @@ describe("estados visuales de la mascota", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Gato/i }));
     expect(view.container.querySelector(".cat .pet-svg__eyes--critical")).toBeInTheDocument();
   });
+
+  it("cambia la expresión del ornitorrinco entre saludable, bajo y crítico", () => {
+    const props = {
+      careLoading: false,
+      onCare: () => undefined,
+      onRename: () => undefined,
+      renameLoading: false,
+    };
+    const view = render(
+      <DevGotchiView devgotchi={{ ...devgotchi, vida_actual: 95 }} {...props} />,
+    );
+
+    fireEvent.click(screen.getByRole("radio", { name: /Ornitorrinco/i }));
+    expect(view.container.querySelector(".platypus .pet-svg__eyes--healthy")).toBeInTheDocument();
+    expect(view.container.querySelector(".platypus__mouth--healthy")).toBeInTheDocument();
+
+    view.rerender(
+      <DevGotchiView devgotchi={{ ...devgotchi, vida_actual: 65 }} {...props} />,
+    );
+    expect(view.container.querySelector(".platypus .pet-svg__eyes--warning")).toBeInTheDocument();
+    expect(view.container.querySelector(".platypus__mouth--warning")).toBeInTheDocument();
+
+    view.rerender(
+      <DevGotchiView devgotchi={{ ...devgotchi, vida_actual: 20 }} {...props} />,
+    );
+    expect(view.container.querySelector(".platypus .pet-svg__eyes--critical")).toBeInTheDocument();
+    expect(view.container.querySelector(".platypus__mouth--critical")).toBeInTheDocument();
+  });
 });

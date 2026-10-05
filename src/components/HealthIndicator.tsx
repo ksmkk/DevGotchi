@@ -119,7 +119,7 @@ function Cat({ health }: { health: HealthStatus }) {
   );
 }
 
-function Platypus() {
+function Platypus({ health }: { health: HealthStatus }) {
   return (
     <svg className="pet-character pet-svg platypus" viewBox="0 0 220 220" aria-hidden="true">
       <defs><linearGradient id="plat-fur" x1="0" y1="0" x2="1" y2="1"><stop stopColor="#8bd2c6" /><stop offset="1" stopColor="#42968e" /></linearGradient><linearGradient id="fedora-felt" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#8a5a32" /><stop offset="1" stopColor="#55331f" /></linearGradient><pattern id="tail-grid" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(22)"><rect width="10" height="10" fill="#a77a4d" /><path d="M0 0v10" stroke="#795637" strokeWidth="2" /></pattern></defs>
@@ -128,8 +128,27 @@ function Platypus() {
       <g className="pet-svg__body"><path d="M59 126c4-29 25-44 55-44 29 0 50 15 55 44l7 49c2 17-11 27-28 27H80c-17 0-29-10-27-27z" fill="url(#plat-fur)" stroke="#315b58" strokeWidth="4" /><ellipse cx="116" cy="154" rx="36" ry="39" fill="#aee1d7" opacity=".55" /><path d="M79 188c-9 4-13 14-5 17 12 4 28-2 29-10 1-8-14-11-24-7zm71 0c9 4 13 14 5 17-12 4-28-2-29-10-1-8 14-11 24-7z" fill="#e7b55d" stroke="#654c2e" strokeWidth="4" /></g>
       <g className="pet-svg__head"><path d="M54 76c0-33 25-55 61-55s61 22 61 55-22 57-61 57-61-24-61-57z" fill="url(#plat-fur)" stroke="#315b58" strokeWidth="4" /><path d="M72 44c10-11 21-16 34-17" fill="none" stroke="#caf2e9" strokeWidth="7" strokeLinecap="round" opacity=".62" />
         <g className="platypus__fedora"><path d="M80 33l5-19c1-5 6-8 11-7l38 3c5 0 8 4 9 9l3 18z" fill="url(#fedora-felt)" stroke="#3b2518" strokeWidth="4" strokeLinejoin="round" /><path d="M83 27c15 5 43 7 61 3l2 9c-20 6-49 4-66-2z" fill="#32251e" /><path d="M62 35c24-6 72-7 103 1 7 2 7 7 0 10-27 9-76 7-103-1-7-2-7-8 0-10z" fill="#6e4529" stroke="#3b2518" strokeWidth="4" /><path d="M72 38c22 5 62 6 83 1" fill="none" stroke="#a97749" strokeWidth="2.5" strokeLinecap="round" opacity=".7" /></g>
-        <g className="pet-svg__eyes"><ellipse cx="88" cy="67" rx="9" ry="12" fill="#2d3734" /><ellipse cx="142" cy="67" rx="9" ry="12" fill="#2d3734" /><circle cx="85" cy="63" r="3" fill="white" /><circle cx="139" cy="63" r="3" fill="white" /></g>
-        <path d="M72 88c5-19 25-25 43-17 18-8 38-2 43 17 6 23-17 34-43 27-26 7-49-4-43-27z" fill="#efbd65" stroke="#654c2e" strokeWidth="4" /><path d="M77 95c19 7 57 7 76 0" fill="none" stroke="#b57b38" strokeWidth="3" opacity=".7" /><ellipse cx="96" cy="86" rx="3.5" ry="2.5" fill="#76552f" /><ellipse cx="134" cy="86" rx="3.5" ry="2.5" fill="#76552f" />
+        {health === "critical" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--critical" stroke="#2d3734" strokeWidth="5" strokeLinecap="round">
+            <path d="M79 60l17 15m0-15L79 75m54-15 17 15m0-15-17 15" />
+          </g>
+        ) : health === "warning" ? (
+          <g className="pet-svg__eyes pet-svg__eyes--warning" fill="none" stroke="#2d3734" strokeWidth="5" strokeLinecap="round">
+            <path d="M77 70q11-11 22 0m32 0q11-11 22 0" />
+          </g>
+        ) : (
+          <g className="pet-svg__eyes pet-svg__eyes--healthy"><ellipse cx="88" cy="67" rx="9" ry="12" fill="#2d3734" /><ellipse cx="142" cy="67" rx="9" ry="12" fill="#2d3734" /><circle cx="85" cy="63" r="3" fill="white" /><circle cx="139" cy="63" r="3" fill="white" /></g>
+        )}
+        <path d="M72 88c5-19 25-25 43-17 18-8 38-2 43 17 6 23-17 34-43 27-26 7-49-4-43-27z" fill="#efbd65" stroke="#654c2e" strokeWidth="4" />
+        <path
+          className={`platypus__mouth platypus__mouth--${health}`}
+          d={health === "healthy" ? "M82 94q33 17 66 0" : health === "warning" ? "M82 99q33-7 66 0" : "M82 103q33-18 66 0"}
+          fill="none"
+          stroke="#9b652f"
+          strokeWidth="3"
+          strokeLinecap="round"
+        />
+        <ellipse cx="96" cy="86" rx="3.5" ry="2.5" fill="#76552f" /><ellipse cx="134" cy="86" rx="3.5" ry="2.5" fill="#76552f" />
         <path d="M72 119c23 12 63 12 86 0" fill="none" stroke="#425eaa" strokeWidth="10" strokeLinecap="round" /><path d="M153 120l20 25-18 3-9-25z" fill="#526fbd" stroke="#304274" strokeWidth="3" /><circle cx="115" cy="130" r="13" fill="#8fdbe1" stroke="#315b58" strokeWidth="3" /><text x="115" y="135" textAnchor="middle" fill="#a84055" fontSize="12" fontWeight="900">♥</text>
       </g>
     </svg>
@@ -157,7 +176,7 @@ export function HealthIndicator({
 
       {species === "dog" ? <Dog health={health} /> : null}
       {species === "cat" ? <Cat health={health} /> : null}
-      {species === "platypus" ? <Platypus /> : null}
+      {species === "platypus" ? <Platypus health={health} /> : null}
 
       <div className="pet-prop pet-prop--bowl" aria-hidden="true">
         <span className="pet-prop__food">{species === "dog" ? "🦴" : species === "cat" ? "🐟" : "🦐"}</span>
