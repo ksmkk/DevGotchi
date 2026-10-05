@@ -1,4 +1,4 @@
-const { ApolloServer } = require('apollo-server-express');
+const { ApolloServer } = require('@apollo/server');
 const { typeDefs } = require('./schema');
 const { resolvers } = require('./resolvers');
 
@@ -6,13 +6,18 @@ async function executeGraphQL(query, variables, db) {
   const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: () => ({ db }),
   });
 
   await server.start();
-  const result = await server.executeOperation({ query, variables });
+  const response = await server.executeOperation(
+    { query, variables },
+    { contextValue: { db } },
+  );
   await server.stop();
-  return result;
+  if (response.body.kind !== 'single') {
+    throw new Error('La operación GraphQL devolvió una respuesta incremental inesperada');
+  }
+  return response.body.singleResult;
 }
 
 describe('operaciones GraphQL de DevGotchi', () => {

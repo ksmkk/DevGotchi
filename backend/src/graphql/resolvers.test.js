@@ -121,6 +121,18 @@ describe('Mutation.disminuirVida', () => {
 });
 
 describe('Mutation.conectarRepositorio', () => {
+  test('rechaza URLs que no correspondan a repositorios de GitHub', async () => {
+    const db = { query: jest.fn() };
+
+    await expect(resolvers.Mutation.conectarRepositorio(
+      null,
+      { repositoryUrl: 'https://example.com/acme/api-gateway' },
+      { db },
+    )).rejects.toThrow('repositorio de GitHub');
+
+    expect(db.query).not.toHaveBeenCalled();
+  });
+
   test('crea un proyecto conectado para el primer usuario disponible', async () => {
     const db = {
       query: jest.fn()
@@ -246,6 +258,37 @@ describe('Mutation.conectarRepositorio', () => {
     expect(result.repositoryUrl).toBe('https://github.com/acme/api-gateway');
     expect(db.query).toHaveBeenCalledTimes(2);
     expect(db.query).toHaveBeenNthCalledWith(2, expect.stringContaining('is_current'), [8]);
+  });
+});
+
+describe('Mutation.createUser', () => {
+  test('guarda un hash scrypt con salt en lugar de la contraseña', async () => {
+    const db = {
+      query: jest.fn().mockResolvedValue({
+        rows: [{
+          id: 1,
+          uuid: 'user-uuid',
+          email: 'dev@example.com',
+          username: 'dev',
+          full_name: 'Dev User',
+        }],
+      }),
+    };
+
+    await resolvers.Mutation.createUser(
+      null,
+      {
+        email: 'dev@example.com',
+        username: 'dev',
+        password: 'una-clave-segura',
+        fullName: 'Dev User',
+      },
+      { db },
+    );
+
+    const values = db.query.mock.calls[0][1];
+    expect(values[3]).toMatch(/^scrypt\$[^$]+\$[^$]+$/);
+    expect(values[3]).not.toContain('una-clave-segura');
   });
 });
 

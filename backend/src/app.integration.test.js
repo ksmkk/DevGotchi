@@ -49,6 +49,24 @@ describe('API HTTP integrada', () => {
       .expect(({ body }) => expect(body).toMatchObject({ conectado: true, database: 'SQLITE' }));
   });
 
+  test('limita CORS a los orígenes locales configurados', async () => {
+    await request(app)
+      .options('/graphql')
+      .set('Origin', 'http://127.0.0.1:5173')
+      .set('Access-Control-Request-Method', 'POST')
+      .expect(204)
+      .expect('Access-Control-Allow-Origin', 'http://127.0.0.1:5173');
+
+    await request(app)
+      .options('/graphql')
+      .set('Origin', 'https://sitio-no-autorizado.example')
+      .set('Access-Control-Request-Method', 'POST')
+      .expect(400)
+      .expect((response) => {
+        expect(response.headers['access-control-allow-origin']).toBeUndefined();
+      });
+  });
+
   test('expone rutas REST de proyectos y procesa un webhook de estado', async () => {
     await request(app)
       .get('/api/projects/demo')

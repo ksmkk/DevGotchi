@@ -149,8 +149,8 @@ Jest exige globalmente al menos 60% en statements, branches, functions y lines. 
 
 GitHub Actions se ejecuta en pushes a `main` y pull requests hacia `main`, con Node.js 22 y caché de npm:
 
-- Backend: `npm ci`, tests y coverage con umbral obligatorio de 60% en las cuatro métricas.
-- Frontend: `npm ci`, tests, lint, type-check y build de producción.
+- Backend: `npm ci`, auditoría de dependencias de producción, tests y coverage con umbral obligatorio de 60% en las cuatro métricas.
+- Frontend: `npm ci`, auditoría de dependencias de producción, tests, lint, type-check y build de producción.
 
 No requiere secretos ni acceso real a GitHub; las integraciones externas se prueban con dobles controlados.
 

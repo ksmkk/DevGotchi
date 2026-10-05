@@ -212,7 +212,7 @@ function App() {
             devgotchi={devgotchi}
             careError={analysisState.error?.message}
             careLoading={analysisState.loading}
-            onCare={() => void handleCare()}
+            onCare={handleCare}
             onRename={(name) => handleRename(name)}
             renameError={renameState.error?.message}
             renameLoading={renameState.loading}

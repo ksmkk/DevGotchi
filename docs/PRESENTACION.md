@@ -78,7 +78,7 @@ curl http://127.0.0.1:3000/estado-db
 
 ## 10. GitHub Actions
 
-CI usa Node.js 22 y `npm ci`. El job backend ejecuta tests y coverage con los cuatro umbrales. El job frontend ejecuta tests, ESLint, type-check y build. Los jobs no dependen de credenciales reales ni de la red de GitHub para sus casos de prueba.
+CI usa Node.js 22 y `npm ci`. Ambos jobs auditan las dependencias de producción. El job backend ejecuta tests y coverage con los cuatro umbrales. El job frontend ejecuta tests, ESLint, type-check y build. Los jobs no dependen de credenciales reales ni de la red de GitHub para sus casos de prueba.
 
 ## 11. Seguridad
 
@@ -96,7 +96,7 @@ Están implementados el diagnóstico real, cálculo de vida, informe, conexión/
 
 ## 13. Próximos pasos
 
-- Migrar Apollo Server 3 antes de abordar una evolución mayor, porque la versión está fuera de soporte upstream.
+- Mantener Apollo Server 5 y sus integraciones actualizados dentro de sus versiones soportadas.
 - Sustituir el almacén de conexiones en archivo por un gestor de secretos o tabla cifrada administrada.
 - Incorporar autenticación de usuarios y autorización por proyecto.
 - Publicar reportes de coverage y una imagen versionada en un registry.

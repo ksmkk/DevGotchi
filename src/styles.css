@@ -325,70 +325,18 @@ h1 {
 
 .health-indicator {
   position: relative;
-  display: grid;
-  width: 190px;
-  height: 190px;
-  margin: 28px auto 26px;
-  place-content: center;
-  border: 2px solid var(--health-color);
-  border-radius: 42% 42% 38% 38%;
-  color: var(--health-color);
-  background: var(--health-light);
-  box-shadow: inset 0 -12px 0 rgb(255 255 255 / 35%);
-}
-
-.health-indicator::before,
-.health-indicator::after {
-  position: absolute;
-  top: 56px;
-  width: 18px;
-  height: 34px;
-  border: 2px solid var(--health-color);
-  background: var(--health-light);
-  content: "";
-}
-
-.health-indicator::before {
-  left: -12px;
-  border-radius: 10px 2px 2px 10px;
-}
-
-.health-indicator::after {
-  right: -12px;
-  border-radius: 2px 10px 10px 2px;
-}
-
-.health-indicator__antenna {
-  position: absolute;
-  top: -22px;
-  left: calc(50% - 1px);
-  width: 2px;
-  height: 23px;
-  background: var(--health-color);
-}
-
-.health-indicator__antenna::before {
-  position: absolute;
-  top: -5px;
-  left: -5px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: var(--health-color);
-  content: "";
-}
-
-.health-indicator__face {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  font-size: 2.6rem;
-  font-weight: 500;
-  letter-spacing: -0.12em;
+  width: 230px;
+  height: 220px;
+  margin: 26px auto 20px;
 }
 
 .health-indicator__label {
   position: absolute;
-  bottom: 18px;
+  right: 4px;
+  bottom: 12px;
   left: 50%;
+  z-index: 8;
+  width: max-content;
   padding: 5px 10px;
   border-radius: 999px;
   color: white;
@@ -400,49 +348,835 @@ h1 {
   transform: translateX(-50%);
 }
 
+.dog {
+  position: absolute;
+  z-index: 4;
+  right: 38px;
+  bottom: 36px;
+  width: 148px;
+  height: 162px;
+  transform-origin: 50% 100%;
+}
+
+.dog__body {
+  position: absolute;
+  right: 18px;
+  bottom: 6px;
+  width: 100px;
+  height: 92px;
+  border: 3px solid #5c321f;
+  border-radius: 48% 48% 34% 34%;
+  background: #f1a95d;
+  box-shadow: inset -12px -8px 0 rgb(139 72 36 / 13%);
+}
+
+.dog__head {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: 14px;
+  width: 122px;
+  height: 101px;
+  border: 3px solid #5c321f;
+  border-radius: 48% 48% 44% 44%;
+  background: #f6bd75;
+  box-shadow: inset -9px -7px 0 rgb(139 72 36 / 10%);
+}
+
+.dog__ear {
+  position: absolute;
+  z-index: -1;
+  top: 7px;
+  width: 38px;
+  height: 66px;
+  border: 3px solid #5c321f;
+  background: #9b5938;
+}
+
+.dog__ear--left {
+  left: -25px;
+  border-radius: 65% 38% 58% 60%;
+  transform: rotate(18deg);
+}
+
+.dog__ear--right {
+  right: -25px;
+  border-radius: 38% 65% 60% 58%;
+  transform: rotate(-18deg);
+}
+
+.dog__patch {
+  position: absolute;
+  top: 7px;
+  right: 12px;
+  width: 42px;
+  height: 48px;
+  border-radius: 55% 45% 52% 48%;
+  background: #b66a3f;
+  transform: rotate(8deg);
+}
+
+.dog__eye {
+  position: absolute;
+  top: 39px;
+  z-index: 2;
+  width: 11px;
+  height: 14px;
+  border-radius: 50%;
+  background: #3a241b;
+  box-shadow: inset 3px 2px 0 white;
+}
+
+.dog__eye--left { left: 30px; }
+.dog__eye--right { right: 30px; }
+
+.dog__muzzle {
+  position: absolute;
+  right: 34px;
+  bottom: 10px;
+  width: 49px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fff0d5;
+}
+
+.dog__nose {
+  position: absolute;
+  z-index: 3;
+  right: 50px;
+  bottom: 32px;
+  width: 18px;
+  height: 13px;
+  border-radius: 50% 50% 55% 55%;
+  background: #3a241b;
+}
+
+.dog__mouth {
+  position: absolute;
+  right: 49px;
+  bottom: 20px;
+  width: 20px;
+  height: 11px;
+  border-bottom: 3px solid #5c321f;
+  border-radius: 50%;
+}
+
+.dog__tongue {
+  position: absolute;
+  right: 53px;
+  bottom: 8px;
+  width: 13px;
+  height: 18px;
+  border: 2px solid #8e3d45;
+  border-radius: 4px 4px 9px 9px;
+  background: #f17d8c;
+  opacity: 0;
+}
+
+.dog__paw {
+  position: absolute;
+  z-index: 6;
+  bottom: 2px;
+  width: 29px;
+  height: 42px;
+  border: 3px solid #5c321f;
+  border-radius: 15px 15px 12px 12px;
+  background: #f6bd75;
+}
+
+.dog__paw--left { left: 39px; }
+.dog__paw--right { right: 27px; }
+
+.dog__tail {
+  position: absolute;
+  z-index: 0;
+  right: -7px;
+  bottom: 36px;
+  width: 57px;
+  height: 24px;
+  border: 3px solid #5c321f;
+  border-left: 0;
+  border-radius: 0 28px 28px 0;
+  background: #f1a95d;
+  transform: rotate(-32deg);
+  transform-origin: 0 50%;
+}
+
+.dog__collar {
+  position: absolute;
+  z-index: 7;
+  top: 86px;
+  left: 35px;
+  width: 81px;
+  height: 12px;
+  border: 2px solid #193e34;
+  border-radius: 6px;
+  background: #277c6c;
+}
+
+.dog__tag {
+  position: absolute;
+  z-index: 8;
+  top: 94px;
+  left: 61px;
+  display: grid;
+  width: 31px;
+  height: 27px;
+  place-items: center;
+  border: 2px solid #193e34;
+  border-radius: 50%;
+  color: #193e34;
+  background: #ffd35a;
+  font-family: Consolas, monospace;
+  font-size: 0.48rem;
+  font-weight: 900;
+}
+
+.cat {
+  position: absolute;
+  z-index: 4;
+  right: 37px;
+  bottom: 36px;
+  width: 150px;
+  height: 164px;
+  transform-origin: 50% 100%;
+}
+
+.cat__body {
+  position: absolute;
+  right: 21px;
+  bottom: 5px;
+  width: 96px;
+  height: 91px;
+  border: 3px solid #47352c;
+  border-radius: 50% 50% 33% 33%;
+  background: #a9a5b8;
+  box-shadow: inset -11px -8px 0 rgb(58 51 77 / 12%);
+}
+
+.cat__head {
+  position: absolute;
+  z-index: 5;
+  top: 5px;
+  left: 16px;
+  width: 119px;
+  height: 99px;
+  border: 3px solid #47352c;
+  border-radius: 46% 46% 48% 48%;
+  background: #bdb9ca;
+}
+
+.cat__ear {
+  position: absolute;
+  z-index: -1;
+  top: -20px;
+  width: 48px;
+  height: 53px;
+  border: 3px solid #47352c;
+  background: #bdb9ca;
+  transform: rotate(45deg);
+}
+
+.cat__ear::after {
+  position: absolute;
+  inset: 11px;
+  background: #df8f99;
+  content: "";
+}
+
+.cat__ear--left { left: 1px; border-radius: 11px 5px 22px 5px; }
+.cat__ear--right { right: 1px; border-radius: 5px 11px 5px 22px; }
+
+.cat__stripe {
+  position: absolute;
+  top: 1px;
+  width: 8px;
+  height: 24px;
+  border-radius: 0 0 7px 7px;
+  background: #777187;
+}
+
+.cat__stripe--one { left: 47px; transform: rotate(-8deg); }
+.cat__stripe--two { right: 47px; transform: rotate(8deg); }
+
+.cat__eye {
+  position: absolute;
+  top: 40px;
+  z-index: 2;
+  width: 14px;
+  height: 17px;
+  border: 3px solid #3f3b2a;
+  border-radius: 50%;
+  background: #d8cf55;
+}
+
+.cat__eye::after {
+  position: absolute;
+  top: 1px;
+  left: 4px;
+  width: 2px;
+  height: 9px;
+  border-radius: 50%;
+  background: #29271f;
+  content: "";
+}
+
+.cat__eye--left { left: 28px; }
+.cat__eye--right { right: 28px; }
+.cat__muzzle { position: absolute; right: 36px; bottom: 14px; width: 43px; height: 28px; border-radius: 50%; background: #eee8e1; }
+.cat__nose { position: absolute; z-index: 3; right: 51px; bottom: 30px; width: 13px; height: 9px; border-radius: 50% 50% 70% 70%; background: #9d5964; }
+
+.cat__whiskers {
+  position: absolute;
+  bottom: 20px;
+  width: 35px;
+  height: 13px;
+  border-top: 2px solid #55473e;
+  border-bottom: 2px solid #55473e;
+}
+
+.cat__whiskers--left { left: -9px; transform: rotate(5deg); }
+.cat__whiskers--right { right: -9px; transform: rotate(-5deg); }
+
+.cat__paw {
+  position: absolute;
+  z-index: 6;
+  bottom: 2px;
+  width: 29px;
+  height: 40px;
+  border: 3px solid #47352c;
+  border-radius: 15px 15px 12px 12px;
+  background: #c9c5d3;
+}
+
+.cat__paw--left { left: 42px; }
+.cat__paw--right { right: 29px; }
+
+.cat__tail {
+  position: absolute;
+  z-index: 0;
+  right: -8px;
+  bottom: 37px;
+  width: 67px;
+  height: 59px;
+  border: 12px solid #817c91;
+  border-bottom-color: transparent;
+  border-left-color: transparent;
+  border-radius: 50%;
+  transform: rotate(16deg);
+  transform-origin: 12px 48px;
+}
+
+.cat__collar,
+.platypus__scarf {
+  position: absolute;
+  z-index: 7;
+  top: 91px;
+  left: 37px;
+  width: 78px;
+  height: 11px;
+  border: 2px solid #50303a;
+  border-radius: 6px;
+  background: #df6d80;
+}
+
+.cat__tag,
+.platypus__tag {
+  position: absolute;
+  z-index: 8;
+  top: 97px;
+  left: 64px;
+  display: grid;
+  width: 25px;
+  height: 24px;
+  place-items: center;
+  border: 2px solid #50303a;
+  border-radius: 50%;
+  color: #50303a;
+  background: #ffd35a;
+  font-family: Consolas, monospace;
+  font-size: 0.48rem;
+  font-weight: 900;
+}
+
+.platypus {
+  position: absolute;
+  z-index: 4;
+  right: 32px;
+  bottom: 35px;
+  width: 170px;
+  height: 155px;
+  transform-origin: 50% 100%;
+}
+
+.platypus__body {
+  position: absolute;
+  right: 21px;
+  bottom: 5px;
+  width: 111px;
+  height: 86px;
+  border: 3px solid #3e3328;
+  border-radius: 50% 50% 38% 38%;
+  background: #58a69c;
+  box-shadow: inset -12px -7px 0 rgb(26 80 75 / 13%);
+}
+
+.platypus__head {
+  position: absolute;
+  z-index: 5;
+  top: 4px;
+  left: 25px;
+  width: 120px;
+  height: 91px;
+  border: 3px solid #3e3328;
+  border-radius: 50% 50% 45% 45%;
+  background: #70bdb0;
+}
+
+.platypus__eye {
+  position: absolute;
+  top: 32px;
+  z-index: 2;
+  width: 11px;
+  height: 14px;
+  border-radius: 50%;
+  background: #302820;
+  box-shadow: inset 3px 2px 0 white;
+}
+
+.platypus__eye--left { left: 27px; }
+.platypus__eye--right { right: 27px; }
+
+.platypus__bill {
+  position: absolute;
+  z-index: 3;
+  right: 19px;
+  bottom: 5px;
+  width: 78px;
+  height: 37px;
+  border: 3px solid #5f4828;
+  border-radius: 50% 50% 45% 45%;
+  background: #e4ad52;
+  box-shadow: inset 0 -7px 0 rgb(165 104 35 / 14%);
+}
+
+.platypus__nostril { position: absolute; z-index: 4; bottom: 24px; width: 5px; height: 4px; border-radius: 50%; background: #6d512d; }
+.platypus__nostril--left { left: 49px; }
+.platypus__nostril--right { right: 49px; }
+
+.platypus__foot {
+  position: absolute;
+  z-index: 7;
+  bottom: 0;
+  width: 40px;
+  height: 25px;
+  border: 3px solid #5f4828;
+  border-radius: 50% 50% 13px 13px;
+  background: #e4ad52;
+}
+
+.platypus__foot--left { left: 48px; transform: rotate(-5deg); }
+.platypus__foot--right { right: 26px; transform: rotate(5deg); }
+
+.platypus__tail {
+  position: absolute;
+  z-index: 0;
+  left: -5px;
+  bottom: 15px;
+  width: 65px;
+  height: 80px;
+  border: 3px solid #4d3926;
+  border-radius: 50% 35% 50% 35%;
+  background: repeating-linear-gradient(20deg, #a97947 0 9px, #8d623d 10px 13px);
+  transform: rotate(-31deg);
+  transform-origin: 70% 80%;
+}
+
+.platypus__scarf { top: 82px; left: 47px; width: 77px; background: #4263a9; border-color: #273963; }
+.platypus__tag { top: 88px; left: 75px; color: #273963; border-color: #273963; background: #8ed9e0; }
+
+/* Vector characters share a polished illustration and animation rig. */
+.pet-svg.dog,
+.pet-svg.cat,
+.pet-svg.platypus {
+  position: absolute;
+  z-index: 4;
+  top: auto;
+  right: 9px;
+  bottom: 25px;
+  left: auto;
+  width: 212px;
+  height: 212px;
+  overflow: visible;
+  filter: drop-shadow(0 7px 5px rgb(33 55 40 / 13%));
+  transform-origin: 50% 90%;
+}
+
+.pet-svg__shadow {
+  fill: rgb(42 78 52 / 17%);
+  filter: blur(2px);
+  transform-origin: center;
+}
+
+.pet-svg__head,
+.pet-svg__body,
+.pet-svg__tail,
+.pet-svg__ear,
+.pet-svg__eyes,
+.pet-svg__tongue {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.health-indicator--warning .pet-svg {
+  filter: saturate(.88) drop-shadow(0 7px 5px rgb(33 55 40 / 13%));
+}
+
+.health-indicator--critical .pet-svg {
+  filter: saturate(.7) drop-shadow(0 7px 5px rgb(33 55 40 / 13%));
+}
+
+.health-indicator--critical .pet-svg__eyes {
+  transform: scaleY(.35);
+}
+
+.health-indicator--critical .pet-svg__tongue { opacity: 0; }
+
+.pet-effects,
+.pet-prop,
+.pet-scan {
+  pointer-events: none;
+}
+
+.pet-effect {
+  position: absolute;
+  z-index: 7;
+  color: #ec6d74;
+  font-size: 1rem;
+  opacity: 0;
+}
+
+.pet-effect--one { top: 44px; left: 9px; }
+.pet-effect--two { top: 12px; right: 18px; color: #e5a51e; }
+.pet-effect--three { top: 82px; right: 0; font-size: 0.75rem; }
+
+.pet-prop--bowl {
+  position: absolute;
+  z-index: 10;
+  right: 4px;
+  bottom: 24px;
+  width: 67px;
+  height: 25px;
+  border: 3px solid #25463c;
+  border-radius: 4px 4px 25px 25px;
+  background: #56a692;
+  opacity: 0;
+}
+
+.pet-prop__food {
+  position: absolute;
+  top: -9px;
+  left: 7px;
+  width: 47px;
+  height: 14px;
+  border: 3px solid #5c321f;
+  border-radius: 50%;
+  background: radial-gradient(circle, #7b4b2a 0 3px, #d79550 4px 100%);
+}
+
+.pet-prop--ball {
+  position: absolute;
+  z-index: 9;
+  bottom: 25px;
+  left: 2px;
+  width: 42px;
+  height: 42px;
+  overflow: hidden;
+  border: 3px solid #66333a;
+  border-radius: 50%;
+  background: #f17278;
+  opacity: 0;
+}
+
+.pet-prop--ball span {
+  position: absolute;
+  inset: -6px 14px;
+  border: 3px solid #fff4da;
+  border-top: 0;
+  border-bottom: 0;
+  transform: rotate(32deg);
+}
+
+.pet-prop--yarn {
+  position: absolute;
+  z-index: 9;
+  bottom: 25px;
+  left: 4px;
+  width: 44px;
+  height: 44px;
+  border: 3px solid #653b63;
+  border-radius: 50%;
+  background: repeating-linear-gradient(28deg, #bd72b6 0 4px, #8d4f8b 5px 7px);
+  opacity: 0;
+}
+
+.pet-prop--yarn span {
+  position: absolute;
+  top: 35px;
+  left: 34px;
+  width: 50px;
+  height: 25px;
+  border-bottom: 3px solid #8d4f8b;
+  border-radius: 50%;
+}
+
+.pet-prop--splash {
+  position: absolute;
+  z-index: 9;
+  right: -11px;
+  bottom: 11px;
+  width: 102px;
+  height: 62px;
+  overflow: visible;
+  opacity: 0;
+}
+
+.water-ripple {
+  fill: none;
+  stroke: #4298bb;
+  stroke-linecap: round;
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.water-ripple--inner { stroke: #76cae5; stroke-width: 2.5; }
+.water-crest { fill: #55add0; stroke: #357e9d; stroke-linejoin: round; stroke-width: 2.5; }
+.water-highlight { fill: none; stroke: #bdebf6; stroke-linecap: round; stroke-width: 3; }
+.water-drop,
+.water-speck { fill: #62bbdb; stroke: #367f9d; stroke-width: 1.5; transform-box: fill-box; transform-origin: center; }
+
+.pet-scan {
+  position: absolute;
+  z-index: 12;
+  inset: 6px 19px 33px;
+  overflow: hidden;
+  border: 2px solid #5db8a4;
+  border-radius: 48%;
+  opacity: 0;
+}
+
+.pet-scan span {
+  position: absolute;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: #50d3b6;
+  box-shadow: 0 0 12px #50d3b6;
+}
+
 .pet-stage {
   position: relative;
   margin: 10px 0 22px;
-  padding: 4px 18px 18px;
+  min-height: 315px;
+  padding: 18px 18px 20px;
   overflow: hidden;
   border: 1px solid #e4ebe5;
   border-radius: 22px;
   background:
-    radial-gradient(circle at 50% 100%, rgb(39 124 75 / 9%), transparent 48%),
-    linear-gradient(180deg, #fbfdfb, #f2f7f2);
+    linear-gradient(180deg, #dcf3ed 0 64%, #c6dfb0 64% 67%, #add096 67% 100%);
 }
 
 .pet-stage .health-indicator {
-  margin-top: 36px;
+  margin: 0;
 }
 
-.pet-stage__spark {
+.pet-drag-shell {
+  position: relative;
+  z-index: 6;
+  width: 230px;
+  height: 232px;
+  margin: 6px auto 0;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  transition: transform 520ms cubic-bezier(.22, .85, .3, 1.18);
+}
+
+.pet-drag-shell:hover .pet-svg {
+  filter: brightness(1.04) drop-shadow(0 9px 6px rgb(33 55 40 / 16%));
+}
+
+.pet-drag-shell--dragging {
+  z-index: 12;
+  cursor: grabbing;
+  transition: none;
+}
+
+.pet-drag-shell--dragging .pet-svg {
+  filter: brightness(1.05) drop-shadow(0 12px 8px rgb(33 55 40 / 18%));
+}
+
+.pet-stage__hint {
   position: absolute;
-  color: #e2a527;
-  font-size: 1.3rem;
-  animation: float-spark 2.4s ease-in-out infinite;
+  z-index: 5;
+  top: 12px;
+  left: 50%;
+  width: max-content;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: rgb(48 79 61 / 64%);
+  background: rgb(255 255 255 / 45%);
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: .05em;
+  pointer-events: none;
+  text-transform: uppercase;
+  transform: translateX(-50%);
 }
 
-.pet-stage__spark--one { top: 35px; left: 18%; }
-.pet-stage__spark--two { top: 72px; right: 16%; animation-delay: -1.1s; }
+.pet-stage__sky {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 64%;
+}
+
+.pet-stage__sky::before {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  background: #ffe27a;
+  box-shadow: 0 0 0 8px rgb(255 226 122 / 25%);
+  content: "";
+}
+
+.pet-stage__cloud {
+  position: absolute;
+  width: 48px;
+  height: 15px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 72%);
+}
+
+.pet-stage__cloud::before,
+.pet-stage__cloud::after {
+  position: absolute;
+  bottom: 0;
+  border-radius: 50%;
+  background: inherit;
+  content: "";
+}
+
+.pet-stage__cloud::before { left: 8px; width: 20px; height: 24px; }
+.pet-stage__cloud::after { right: 6px; width: 17px; height: 20px; }
+.pet-stage__cloud--one { top: 37px; left: 24px; }
+.pet-stage__cloud--two { top: 91px; right: 17px; transform: scale(0.68); }
 
 .pet-message {
-  min-height: 1.45em;
-  margin: -8px auto 0;
-  color: #48564c;
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  margin: 0 auto;
+  padding: 10px 13px;
+  border: 1px solid rgb(39 77 58 / 12%);
+  border-radius: 13px;
+  color: #364b3c;
+  background: rgb(255 255 255 / 88%);
+  box-shadow: 0 6px 16px rgb(32 69 45 / 10%);
   font-size: 0.82rem;
   font-weight: 700;
-  text-align: center;
 }
 
-.health-indicator--feeding .health-indicator__face,
-.health-indicator--caring .health-indicator__face {
-  animation: happy-pop 420ms ease-out;
+.pet-message p { margin: 0; }
+
+.pet-message__dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--health-color);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--health-color) 14%, transparent);
 }
 
-.health-indicator--playing {
-  animation: pet-play 520ms ease-in-out;
+.pet-picker {
+  margin: 0 0 22px;
+  padding: 0;
+  border: 0;
 }
+
+.pet-picker legend {
+  margin-bottom: 9px;
+  color: #59655c;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.pet-picker__options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pet-picker__option {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  padding: 10px 5px 9px;
+  border: 1px solid #dce5dd;
+  border-radius: 13px;
+  background: #f8faf8;
+  cursor: pointer;
+  place-items: center;
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.pet-picker__option:hover { border-color: #8fbea0; transform: translateY(-2px); }
+
+.pet-picker__option--selected {
+  border-color: #277c4b;
+  background: #edf7f0;
+  box-shadow: 0 0 0 2px rgb(39 124 75 / 10%);
+}
+
+.pet-picker__option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+}
+
+.pet-picker__option:has(input:focus-visible) { outline: 3px solid rgb(39 124 75 / 22%); outline-offset: 2px; }
+.pet-picker__option > span { font-size: 1.25rem; }
+.pet-picker__option strong { margin-top: 2px; font-size: 0.7rem; }
+.pet-picker__option small { color: #7a827c; font-size: 0.58rem; }
+
+.health-indicator--healthy .dog__tongue,
+.health-indicator--feeding .dog__tongue,
+.health-indicator--playing .dog__tongue { opacity: 1; }
+
+.health-indicator--petting .pet-effect {
+  color: #ef6f83;
+}
+
+.health-indicator--critical .dog__eye { height: 5px; box-shadow: none; transform: rotate(-8deg); }
+.health-indicator--critical .dog__eye--right { transform: rotate(8deg); }
+.health-indicator--warning .dog__ear--left { transform: rotate(7deg); }
+.health-indicator--critical .cat__eye,
+.health-indicator--critical .platypus__eye { height: 5px; border: 0; box-shadow: none; transform: rotate(-8deg); }
+.health-indicator--critical .cat__eye--right,
+.health-indicator--critical .platypus__eye--right { transform: rotate(8deg); }
+.health-indicator--cat .pet-prop__food { background: radial-gradient(ellipse, #e9d3a0 0 30%, #cf7d77 32% 52%, #7b4b2a 54% 100%); }
+.health-indicator--platypus .pet-prop--bowl { border-color: #315e73; background: #6ebed0; }
 
 .life {
   margin-top: 4px;
@@ -561,6 +1295,16 @@ h1 {
   border-color: #8fbea0;
   box-shadow: 0 8px 20px rgb(39 124 75 / 12%);
   transform: translateY(-2px);
+}
+
+.pet-control[aria-pressed="true"] {
+  border-color: #277c4b;
+  box-shadow: 0 0 0 3px rgb(39 124 75 / 13%), 0 9px 20px rgb(39 124 75 / 12%);
+  transform: translateY(-2px);
+}
+
+.pet-control--care[aria-pressed="true"] {
+  border-color: #8de0b0;
 }
 
 .pet-control:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -961,9 +1705,9 @@ h1 {
   }
 
   .health-indicator {
-    width: 164px;
-    height: 164px;
-    margin-top: 31px;
+    width: 230px;
+    height: 210px;
+    margin-top: 10px;
   }
 
   .care-action,
@@ -996,6 +1740,199 @@ h1 {
     animation: appear 500ms ease-out both;
   }
 
+  .dog__body,
+  .cat__body,
+  .platypus__body {
+    animation: dog-breathe 2.8s ease-in-out infinite;
+  }
+
+  .dog__tail {
+    animation: tail-wag 780ms ease-in-out infinite alternate;
+  }
+
+  .cat__tail { animation: cat-tail 1.8s ease-in-out infinite alternate; }
+  .platypus__tail { animation: platypus-tail 2.3s ease-in-out infinite alternate; }
+
+  .dog__ear--left,
+  .dog__ear--right {
+    animation: ear-twitch 4s ease-in-out infinite;
+  }
+
+  .health-indicator--feeding .dog {
+    animation: dog-eat 580ms ease-in-out 2 180ms;
+  }
+
+  .health-indicator--feeding .cat { animation: cat-eat 520ms ease-in-out 2 180ms; }
+  .health-indicator--feeding .platypus { animation: platypus-eat 480ms ease-in-out 2 180ms; }
+
+  .health-indicator--feeding .pet-prop--bowl {
+    animation: prop-arrive 320ms ease-out both;
+  }
+
+  .health-indicator--feeding .pet-effect,
+  .health-indicator--playing .pet-effect,
+  .health-indicator--petting .pet-effect {
+    animation: heart-float 850ms ease-out forwards;
+  }
+
+  .health-indicator--feeding .pet-effect--two,
+  .health-indicator--playing .pet-effect--two,
+  .health-indicator--petting .pet-effect--two { animation-delay: 180ms; }
+  .health-indicator--feeding .pet-effect--three,
+  .health-indicator--playing .pet-effect--three,
+  .health-indicator--petting .pet-effect--three { animation-delay: 360ms; }
+
+  .health-indicator--playing .dog {
+    animation: dog-play 520ms ease-in-out 2;
+  }
+
+  .health-indicator--playing .cat { animation: cat-play 610ms ease-in-out 2; }
+  .health-indicator--playing .platypus { animation: platypus-play 520ms ease-in-out 2; }
+
+  .health-indicator--dog.health-indicator--playing .pet-prop--ball {
+    animation: ball-bounce 1.25s cubic-bezier(.37, .03, .28, 1) both;
+  }
+
+  .health-indicator--cat.health-indicator--playing .pet-prop--yarn {
+    animation: yarn-roll 1.25s ease-in-out both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .pet-prop--splash {
+    animation: water-field 1.3s ease-out both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-ripple--outer {
+    animation: water-ripple-outer 1.35s cubic-bezier(.14, .65, .24, 1) 120ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-ripple--inner {
+    animation: water-ripple-inner 1.05s cubic-bezier(.2, .6, .25, 1) 210ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-crest {
+    animation: water-crest-rise 880ms cubic-bezier(.2, .7, .25, 1) 90ms both;
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-highlight {
+    animation: water-highlight-fade 720ms ease-out 180ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-drop--left {
+    animation: water-drop-left 920ms cubic-bezier(.18, .65, .35, 1) 110ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-drop--center {
+    animation: water-drop-center 1.02s cubic-bezier(.18, .65, .35, 1) 70ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-drop--right {
+    animation: water-drop-right 960ms cubic-bezier(.18, .65, .35, 1) 150ms both;
+  }
+
+  .health-indicator--platypus.health-indicator--playing .water-speck {
+    animation: water-speck-fly 760ms ease-out 130ms both;
+  }
+
+  .health-indicator--playing .dog__tail {
+    animation-duration: 180ms;
+  }
+
+  .health-indicator--caring .pet-scan {
+    animation: scan-show 1.55s ease-in-out both;
+  }
+
+  .health-indicator--caring .pet-scan span {
+    animation: scan-line 1.25s ease-in-out 130ms infinite;
+  }
+
+  .health-indicator--caring .pet-character {
+    animation: dog-inspect 1.2s ease-in-out infinite;
+  }
+
+  .pet-svg {
+    animation: pet-idle 3.2s cubic-bezier(.45, 0, .55, 1) infinite;
+  }
+
+  .pet-svg__body { animation: vector-breathe 2.7s ease-in-out infinite; }
+  .pet-svg__eyes { animation: vector-blink 4.8s ease-in-out infinite; }
+  .pet-svg.dog .pet-svg__tail { animation: vector-tail-dog 720ms ease-in-out infinite alternate; transform-origin: 15% 65%; }
+  .pet-svg.cat .pet-svg__tail { animation: vector-tail-cat 2.1s ease-in-out infinite alternate; transform-origin: 18% 70%; }
+  .pet-svg.platypus .pet-svg__tail { animation: vector-tail-plat 2.4s ease-in-out infinite alternate; transform-origin: 75% 65%; }
+
+  .health-indicator--feeding .pet-svg.dog,
+  .health-indicator--feeding .pet-svg.cat,
+  .health-indicator--feeding .pet-svg.platypus {
+    animation: pet-feed 1.35s cubic-bezier(.32, .02, .22, 1) both;
+  }
+
+  .health-indicator--feeding .pet-svg__head {
+    animation: head-nibble 420ms ease-in-out 360ms 2 alternate;
+    transform-origin: 52% 82%;
+  }
+
+  .health-indicator--playing .pet-svg.dog,
+  .health-indicator--playing .pet-svg.cat,
+  .health-indicator--playing .pet-svg.platypus {
+    animation: pet-pro-jump 1.25s cubic-bezier(.2, .75, .25, 1) both;
+  }
+
+  .health-indicator--playing .pet-svg__shadow {
+    animation: shadow-jump 1.25s ease-in-out both;
+  }
+
+  .health-indicator--caring .pet-svg {
+    animation: pet-scan-pose 1.6s ease-in-out both;
+  }
+
+  .health-indicator--caring .pet-svg__head {
+    animation: curious-tilt 1.3s ease-in-out infinite alternate;
+  }
+
+  .health-indicator--petting .pet-svg {
+    animation: pet-loved 1.05s cubic-bezier(.2, .8, .3, 1) both;
+  }
+
+  .health-indicator--petting .pet-svg__head {
+    animation: happy-nuzzle 520ms ease-in-out 2 alternate;
+  }
+
+  .health-indicator--petting .pet-svg__tail {
+    animation-duration: 190ms;
+  }
+
+  .health-indicator--moving .pet-svg {
+    animation: pet-side-step 620ms cubic-bezier(.35, .05, .25, 1) 2;
+  }
+
+  .health-indicator--entering.health-indicator--dog .pet-svg {
+    animation: dog-entrance 1.55s cubic-bezier(.2, .75, .25, 1) both;
+  }
+
+  .health-indicator--entering.health-indicator--cat .pet-svg {
+    animation: cat-entrance 1.55s cubic-bezier(.22, .78, .28, 1) both;
+  }
+
+  .health-indicator--entering.health-indicator--platypus .pet-svg {
+    animation: platypus-entrance 1.6s cubic-bezier(.2, .8, .28, 1) both;
+  }
+
+  .health-indicator--entering.health-indicator--dog .pet-svg__tail {
+    animation: vector-tail-dog 150ms ease-in-out infinite alternate;
+  }
+
+  .health-indicator--entering.health-indicator--cat .pet-svg__tail {
+    animation: vector-tail-cat 360ms ease-in-out 3 alternate;
+  }
+
+  .health-indicator--entering .pet-effect {
+    animation: entrance-spark 720ms ease-out 720ms both;
+  }
+
+  .health-indicator--entering .pet-effect--two { animation-delay: 860ms; }
+  .health-indicator--entering .pet-effect--three { animation-delay: 1s; }
+
   @keyframes appear {
     from {
       opacity: 0;
@@ -1003,16 +1940,291 @@ h1 {
     }
   }
 
-  @keyframes happy-pop {
-    50% { transform: scale(1.16); }
+  @keyframes pet-idle {
+    0%, 100% { transform: translateY(0) rotate(0); }
+    48% { transform: translateY(-3px) rotate(-.5deg); }
+    55% { transform: translateY(-3px) rotate(.5deg); }
   }
 
-  @keyframes pet-play {
-    25% { transform: rotate(-3deg) translateY(-4px); }
-    75% { transform: rotate(3deg) translateY(-4px); }
+  @keyframes vector-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.025, 1.035); }
   }
 
-  @keyframes float-spark {
-    50% { opacity: 0.45; transform: translateY(-7px) rotate(10deg); }
+  @keyframes vector-blink {
+    0%, 45%, 49%, 77%, 81%, 100% { transform: scaleY(1); }
+    47%, 79% { transform: scaleY(.08); }
+  }
+
+  @keyframes vector-tail-dog {
+    from { transform: rotate(-9deg); }
+    to { transform: rotate(13deg); }
+  }
+
+  @keyframes vector-tail-cat {
+    from { transform: rotate(-5deg); }
+    to { transform: rotate(8deg); }
+  }
+
+  @keyframes vector-tail-plat {
+    from { transform: rotate(-2deg); }
+    to { transform: rotate(5deg); }
+  }
+
+  @keyframes pet-feed {
+    0% { transform: translate(0) rotate(0) scale(1); }
+    18% { transform: translate(-4px, -5px) rotate(-2deg) scale(1.025); }
+    42%, 78% { transform: translate(19px, 11px) rotate(7deg) scale(.98, 1.02); }
+    58% { transform: translate(17px, 8px) rotate(5deg) scale(1.01, .98); }
+    100% { transform: translate(0) rotate(0) scale(1); }
+  }
+
+  @keyframes head-nibble {
+    from { transform: rotate(0) translateY(0); }
+    to { transform: rotate(4deg) translateY(7px); }
+  }
+
+  @keyframes pet-pro-jump {
+    0% { transform: translateY(0) scale(1); }
+    12% { transform: translateY(4px) scale(1.06, .93); }
+    34% { transform: translate(-5px, -29px) rotate(-4deg) scale(.96, 1.06); }
+    52% { transform: translate(4px, -35px) rotate(4deg) scale(.98, 1.04); }
+    73% { transform: translateY(2px) rotate(-2deg) scale(1.08, .9); }
+    86% { transform: translateY(-8px) scale(.98, 1.03); }
+    100% { transform: translateY(0) scale(1); }
+  }
+
+  @keyframes shadow-jump {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    45% { opacity: .35; transform: scale(.68); }
+    73% { opacity: .8; transform: scale(1.08); }
+  }
+
+  @keyframes pet-scan-pose {
+    0%, 100% { transform: translateY(0) scale(1); }
+    25%, 75% { transform: translateY(-4px) scale(1.015); }
+  }
+
+  @keyframes curious-tilt {
+    from { transform: rotate(-2deg); }
+    to { transform: rotate(3deg); }
+  }
+
+  @keyframes pet-loved {
+    0% { transform: scale(1) rotate(0); }
+    22% { transform: scale(1.05, .96) rotate(-2deg); }
+    48% { transform: scale(.98, 1.05) rotate(2deg); }
+    74% { transform: scale(1.04, .97) rotate(-1deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+
+  @keyframes happy-nuzzle {
+    from { transform: translateX(-2px) rotate(-2deg); }
+    to { transform: translateX(3px) rotate(3deg); }
+  }
+
+  @keyframes pet-side-step {
+    0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+    25% { transform: translateY(-7px) rotate(-2deg) scale(.98, 1.03); }
+    50% { transform: translateY(1px) rotate(1deg) scale(1.03, .97); }
+    75% { transform: translateY(-5px) rotate(2deg) scale(.99, 1.02); }
+  }
+
+  @keyframes dog-entrance {
+    0% { opacity: 0; transform: translate(-128px, 13px) rotate(-9deg) scale(.78); }
+    18% { opacity: 1; }
+    37% { transform: translate(-42px, -8px) rotate(5deg) scale(.94, 1.05); }
+    53% { transform: translate(11px, -18px) rotate(3deg) scale(.97, 1.04); }
+    68% { transform: translate(-5px, 3px) rotate(-2deg) scale(1.07, .91); }
+    82% { transform: translate(3px, -7px) rotate(1deg) scale(.99, 1.03); }
+    100% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+  }
+
+  @keyframes cat-entrance {
+    0% { opacity: 0; transform: translate(128px, 6px) rotate(9deg) scale(.72); }
+    16% { opacity: 1; }
+    34% { transform: translate(48px, -6px) rotate(-3deg) scale(.9, 1.06); }
+    52% { transform: translate(3px, -37px) rotate(-6deg) scale(.94, 1.08); }
+    69% { transform: translate(-7px, 3px) rotate(3deg) scale(1.08, .89); }
+    84% { transform: translate(2px, -9px) rotate(-1deg) scale(.98, 1.04); }
+    100% { opacity: 1; transform: translate(0) rotate(0) scale(1); }
+  }
+
+  @keyframes platypus-entrance {
+    0% { opacity: 0; transform: translateY(63px) rotate(-5deg) scale(.68, .54); }
+    22% { opacity: 1; transform: translateY(16px) rotate(4deg) scale(1.08, .88); }
+    42% { transform: translateY(-23px) rotate(-3deg) scale(.94, 1.09); }
+    61% { transform: translateY(3px) rotate(2deg) scale(1.09, .88); }
+    76% { transform: translateY(-11px) rotate(-1deg) scale(.98, 1.04); }
+    89% { transform: translateY(1px) scale(1.02, .97); }
+    100% { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+  }
+
+  @keyframes water-field {
+    0% { opacity: 0; }
+    10%, 78% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes water-ripple-outer {
+    0% { opacity: 0; transform: scale(.35); stroke-width: 5; }
+    18% { opacity: .9; }
+    100% { opacity: 0; transform: scale(1.32, 1.18); stroke-width: 1; }
+  }
+
+  @keyframes water-ripple-inner {
+    0% { opacity: 0; transform: scale(.4); }
+    22% { opacity: .95; }
+    100% { opacity: 0; transform: scale(1.48, 1.25); }
+  }
+
+  @keyframes water-crest-rise {
+    0% { opacity: 0; transform: translateY(13px) scale(.45, .12); }
+    30% { opacity: 1; transform: translateY(-2px) scale(1.08, 1.18); }
+    58% { opacity: .9; transform: translateY(3px) scale(.98, .72); }
+    100% { opacity: 0; transform: translateY(8px) scale(1.18, .16); }
+  }
+
+  @keyframes water-highlight-fade {
+    0% { opacity: 0; stroke-dasharray: 0 40; }
+    32% { opacity: 1; stroke-dasharray: 24 40; }
+    100% { opacity: 0; stroke-dasharray: 8 40; transform: translateY(8px); }
+  }
+
+  @keyframes water-drop-left {
+    0% { opacity: 0; transform: translate(16px, 25px) scale(.35) rotate(18deg); }
+    22% { opacity: 1; }
+    58% { transform: translate(-5px, -9px) scale(1) rotate(-12deg); }
+    100% { opacity: 0; transform: translate(-15px, 25px) scale(.68) rotate(-24deg); }
+  }
+
+  @keyframes water-drop-center {
+    0% { opacity: 0; transform: translateY(39px) scale(.3); }
+    20% { opacity: 1; }
+    56% { transform: translateY(-8px) scale(1); }
+    100% { opacity: 0; transform: translateY(35px) scale(.62); }
+  }
+
+  @keyframes water-drop-right {
+    0% { opacity: 0; transform: translate(-15px, 28px) scale(.35) rotate(-18deg); }
+    20% { opacity: 1; }
+    57% { transform: translate(7px, -7px) scale(1) rotate(13deg); }
+    100% { opacity: 0; transform: translate(17px, 27px) scale(.66) rotate(24deg); }
+  }
+
+  @keyframes water-speck-fly {
+    0% { opacity: 0; transform: translateY(18px) scale(.2); }
+    32% { opacity: .9; transform: translateY(-4px) scale(1); }
+    100% { opacity: 0; transform: translateY(13px) scale(.45); }
+  }
+
+  @keyframes entrance-spark {
+    0% { opacity: 0; transform: scale(.25) rotate(-18deg); }
+    45% { opacity: 1; transform: scale(1.25) rotate(8deg); }
+    100% { opacity: 0; transform: translateY(-15px) scale(.85) rotate(18deg); }
+  }
+
+  @keyframes dog-breathe {
+    50% { transform: scaleY(1.025); }
+  }
+
+  @keyframes tail-wag {
+    from { transform: rotate(-46deg); }
+    to { transform: rotate(-18deg); }
+  }
+
+  @keyframes cat-tail {
+    from { transform: rotate(8deg); }
+    to { transform: rotate(27deg); }
+  }
+
+  @keyframes platypus-tail {
+    from { transform: rotate(-35deg); }
+    to { transform: rotate(-25deg); }
+  }
+
+  @keyframes ear-twitch {
+    0%, 90%, 100% { margin-top: 0; }
+    94% { margin-top: -3px; }
+  }
+
+  @keyframes dog-eat {
+    0%, 100% { transform: rotate(0) translate(0); }
+    45% { transform: rotate(9deg) translate(13px, 9px); }
+    70% { transform: rotate(7deg) translate(11px, 6px); }
+  }
+
+  @keyframes cat-eat {
+    0%, 100% { transform: rotate(0) translate(0); }
+    48% { transform: rotate(7deg) translate(12px, 10px); }
+    70% { transform: rotate(4deg) translate(9px, 6px); }
+  }
+
+  @keyframes platypus-eat {
+    0%, 100% { transform: translate(0) rotate(0); }
+    45% { transform: translate(12px, 6px) rotate(4deg); }
+    70% { transform: translate(8px, 3px) rotate(-2deg); }
+  }
+
+  @keyframes prop-arrive {
+    from { opacity: 0; transform: translateX(20px) scale(0.7); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+  }
+
+  @keyframes heart-float {
+    0% { opacity: 0; transform: translateY(12px) scale(0.6); }
+    30% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(-20px) rotate(9deg) scale(1.15); }
+  }
+
+  @keyframes dog-play {
+    0%, 100% { transform: rotate(0) translateY(0); }
+    35% { transform: rotate(-5deg) translateY(-17px); }
+    68% { transform: rotate(5deg) translateY(-9px); }
+  }
+
+  @keyframes cat-play {
+    0%, 100% { transform: rotate(0) translate(0); }
+    35% { transform: rotate(-8deg) translate(-9px, -12px); }
+    68% { transform: rotate(7deg) translate(9px, -6px); }
+  }
+
+  @keyframes platypus-play {
+    0%, 100% { transform: rotate(0) translateY(0); }
+    30% { transform: rotate(-5deg) translateY(-8px); }
+    65% { transform: rotate(6deg) translateY(-5px); }
+  }
+
+  @keyframes ball-bounce {
+    0% { opacity: 0; transform: translate(-18px, -30px) rotate(0); }
+    12% { opacity: 1; }
+    35% { transform: translate(54px, -82px) rotate(180deg); }
+    58% { transform: translate(108px, 0) rotate(320deg); }
+    75% { transform: translate(142px, -42px) rotate(440deg); }
+    100% { opacity: 1; transform: translate(172px, 0) rotate(560deg); }
+  }
+
+  @keyframes yarn-roll {
+    0% { opacity: 0; transform: translate(-16px, -22px) rotate(0); }
+    15% { opacity: 1; }
+    45% { transform: translate(72px, -17px) rotate(220deg); }
+    72% { transform: translate(125px, 0) rotate(390deg); }
+    100% { opacity: 1; transform: translate(169px, -5px) rotate(540deg); }
+  }
+
+  @keyframes scan-show {
+    0% { opacity: 0; transform: scale(0.88); }
+    18%, 82% { opacity: 0.88; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.03); }
+  }
+
+  @keyframes scan-line {
+    from { top: 0; }
+    to { top: calc(100% - 3px); }
+  }
+
+  @keyframes dog-inspect {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.035); }
   }
 }

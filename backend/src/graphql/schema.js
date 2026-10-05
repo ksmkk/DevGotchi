@@ -1,5 +1,3 @@
-const { gql } = require('apollo-server-express');
-
 /**
  * SCHEMA DE GRAPHQL - DevGotchi
  * 
@@ -10,7 +8,7 @@ const { gql } = require('apollo-server-express');
  * - Qué operaciones puedo hacer (queries y mutations)
  */
 
-const typeDefs = gql`
+const typeDefs = `#graphql
   # =====================
   # TIPOS (Types)
   # =====================

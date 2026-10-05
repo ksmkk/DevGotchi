@@ -31,6 +31,7 @@ const queryMock = {
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  window.localStorage.clear();
 });
 
 describe("vista interactiva de DevGotchi", () => {
@@ -81,6 +82,52 @@ describe("vista interactiva de DevGotchi", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Jugar/i }));
     expect(screen.getByText("¡Qué divertido! Pixel está feliz.")).toBeVisible();
+  });
+
+  it("reacciona con cariño al hacer clic sobre la mascota", async () => {
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    const pet = (await screen.findByRole("img", {
+      name: "DevGotchi está atento y necesita supervisión",
+    })).parentElement;
+    expect(pet).not.toBeNull();
+
+    fireEvent.pointerDown(pet!, { button: 0, clientX: 120, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(pet!, { button: 0, clientX: 120, clientY: 100, pointerId: 1 });
+
+    expect(screen.getByText("¡Qué cariño! Pixel confía un poquito más en ti."))
+      .toBeVisible();
+  });
+
+  it("permite elegir la especie y conserva la elección localmente", async () => {
+    const view = render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("radio", { name: /Gato/i }));
+    expect(screen.getByRole("radio", { name: /Gato/i })).toBeChecked();
+    expect(window.localStorage.getItem("devgotchi-pet-species")).toBe("cat");
+    expect(screen.getByRole("img", {
+      name: "DevGotchi está atento y necesita supervisión",
+    })).toHaveClass("health-indicator--cat", "health-indicator--entering");
+    expect(screen.getByRole("img", {
+      name: "DevGotchi está atento y necesita supervisión",
+    })).not.toHaveClass("health-indicator--playing");
+
+    view.unmount();
+    render(
+      <MockedProvider mocks={[queryMock]}>
+        <App />
+      </MockedProvider>,
+    );
+
+    expect(await screen.findByRole("radio", { name: /Gato/i })).toBeChecked();
   });
 
   it("oculta el diagnóstico GraphQL en la interfaz general", async () => {

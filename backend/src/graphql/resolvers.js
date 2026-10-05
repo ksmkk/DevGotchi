@@ -1,7 +1,21 @@
-const { randomUUID } = require('crypto');
+const { randomBytes, randomUUID, scrypt } = require('node:crypto');
+const { promisify } = require('node:util');
+
+const scryptAsync = promisify(scrypt);
 
 const LOCAL_USER_EMAIL = 'local@devgotchi.invalid';
 const LOCAL_USERNAME = 'devgotchi-local';
+
+async function hashPassword(password) {
+  const normalizedPassword = String(password || '');
+  if (normalizedPassword.length < 8 || normalizedPassword.length > 128) {
+    throw new Error('La contraseña debe tener entre 8 y 128 caracteres');
+  }
+
+  const salt = randomBytes(16);
+  const derivedKey = await scryptAsync(normalizedPassword, salt, 64);
+  return `scrypt$${salt.toString('base64url')}$${derivedKey.toString('base64url')}`;
+}
 
 const getOrCreateRepositoryOwner = async (db) => {
   const existingUser = await db.query('SELECT id FROM users ORDER BY id ASC LIMIT 1');
@@ -353,13 +367,13 @@ const resolvers = {
      */
     createUser: async (_, { email, username, password, fullName }, { db }) => {
       try {
-        // En producción, deberías hashear la contraseña con bcrypt
+        const passwordHash = await hashPassword(password);
         const query = `
           INSERT INTO users (uuid, email, username, password_hash, full_name)
           VALUES ($1, $2, $3, $4, $5)
           RETURNING *
         `;
-        const result = await db.query(query, [randomUUID(), email, username, password, fullName || null]);
+        const result = await db.query(query, [randomUUID(), email, username, passwordHash, fullName || null]);
         return formatUser(result.rows[0]);
       } catch (error) {
         console.error('Error creating user:', error);
@@ -842,6 +856,10 @@ function normalizeRepositoryUrl(repositoryUrl) {
 
   if (!normalizedUrl) {
     throw new Error('La URL del repositorio es obligatoria');
+  }
+
+  if (!/^https:\/\/github\.com\/[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/i.test(normalizedUrl)) {
+    throw new Error('La URL debe pertenecer a un repositorio de GitHub');
   }
 
   return normalizedUrl;
