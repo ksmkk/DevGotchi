@@ -39,6 +39,7 @@ test('evita falsos positivos obvios', () => {
 });
 
 test('ignora secretos genéricos de fixtures spec pero conserva firmas reales', () => {
+  const providerTokenFixture = ['ghp', '1234567890abcdefghijABCD'].join('_');
   const fixtures = analyzeSecrets([
     {
       path: 'src/config/env.validation.spec.ts',
@@ -52,7 +53,7 @@ test('ignora secretos genéricos de fixtures spec pero conserva firmas reales', 
   const leakedProviderToken = analyzeSecrets([
     {
       path: 'src/auth/auth.service.spec.ts',
-      content: 'const TOKEN = "ghp_1234567890abcdefghijABCD";',
+      content: `const TOKEN = "${providerTokenFixture}";`,
     },
   ], []);
 
